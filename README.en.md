@@ -6,7 +6,7 @@ Live Demo: [https://jeonghwanju-repopilot.hf.space](https://jeonghwanju-repopilo
 
 RepoPilot is a free web demo that imports a public GitHub repository, indexes source files, runs local analysis, and shows evidence-backed findings and patch drafts. It does not require OpenAI, Claude, paid inference APIs, hosted databases, or paid vector databases.
 
-For a detailed walkthrough of the project structure and code, see the [RepoPilot Code Guide](docs/repopilot-code-guide.html).
+For a detailed walkthrough of the project structure and code, see the rendered [RepoPilot Code Guide](https://cdn.jsdelivr.net/gh/coding-jhj/RepoPilot@main/docs/index.html).
 
 ## What Works Today
 
