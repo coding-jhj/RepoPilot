@@ -1,0 +1,11 @@
+.git
+.next
+node_modules
+apps/web/.next
+apps/web/node_modules
+apps/web/out
+apps/api/.pytest_cache
+__pycache__
+.repopilot-workspaces
+.env
+.env.local

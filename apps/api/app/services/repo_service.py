@@ -13,8 +13,9 @@ class RepoService:
         r"^https://github\.com/(?P<owner>[A-Za-z0-9_.-]+)/(?P<name>[A-Za-z0-9_.-]+?)(?:\.git)?/?$"
     )
 
-    def __init__(self, workspace_root: Path) -> None:
+    def __init__(self, workspace_root: Path, clone_timeout_seconds: int = 45) -> None:
         self.workspace_root = workspace_root
+        self.clone_timeout_seconds = clone_timeout_seconds
         self.workspace_root.mkdir(parents=True, exist_ok=True)
 
     @classmethod
@@ -65,5 +66,6 @@ class RepoService:
             check=True,
             capture_output=True,
             text=True,
+            timeout=self.clone_timeout_seconds,
         )
         return repo_id, parsed

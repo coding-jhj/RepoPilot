@@ -159,6 +159,51 @@ Docker:
 docker compose up
 ```
 
+## 무료 배포 방법
+
+RepoPilot은 Hugging Face Spaces의 Docker Space로 무료 배포할 수 있도록 구성되어 있습니다.
+
+권장 무료 배포 구조:
+
+```txt
+Hugging Face Spaces CPU Basic
+  -> Dockerfile
+  -> Next.js static export
+  -> FastAPI static file serving
+  -> local static-analysis agent
+```
+
+배포 절차:
+
+1. Hugging Face에서 새 Space를 만듭니다.
+2. SDK는 `Docker`를 선택합니다.
+3. Space repository에 이 프로젝트 파일을 push합니다.
+4. Space의 `README.md`에는 이 저장소의 `SPACE_README.md` 내용을 사용합니다.
+5. 빌드가 끝나면 Space URL에서 RepoPilot UI가 바로 열립니다.
+
+무료 배포 버전은 돈이 나가지 않도록 다음 기능만 기본 활성화합니다.
+
+- paid LLM API 사용 안 함
+- cloud vector DB 사용 안 함
+- local static rule 분석
+- 임시 workspace 사용
+- public GitHub repo만 분석
+- repo/file 크기 제한
+- mock PR workflow
+
+Docker로 로컬에서 배포 형태를 확인할 수도 있습니다.
+
+```bash
+docker build -t repopilot .
+docker run --rm -p 7860:7860 repopilot
+```
+
+접속:
+
+```txt
+http://localhost:7860
+```
+
 ## 테스트
 
 Backend tests:
@@ -218,9 +263,10 @@ REPOPILOT_ANTHROPIC_API_KEY=...
 - [ ] 실제 GitHub Pull Request 생성
 - [ ] 선택적 OpenAI/Claude adapter 추가
 - [ ] demo GIF와 benchmark case 추가
+- [ ] Hugging Face Spaces public demo 링크 추가
 
 ## 한계
 
-RepoPilot은 의도적으로 scope를 제한한 프로젝트입니다. 현재 목표는 “유료 API로 대형 production system을 완전 자동으로 고치는 Agent”가 아니라, 무료로 실행되면서 코드베이스 이해, 근거 기반 리뷰, 테스트 제안, 작은 patch draft 생성을 보여주는 AI Software Engineer Agent입니다.
+RepoPilot은 의도적으로 scope를 제한한 프로젝트입니다. 현재 목표는 “유료 API로 대형 production system을 완전 자동으로 고치는 Agent”가 아니라, 무료로 실행되면서 코드베이스 이해, 근거 기반 리뷰, 테스트 제안, 작은 patch draft 생성을 보여주는 AI Software Engineer Agent입니다. 무료 배포 환경에서는 CPU, 디스크, 네트워크, 실행 시간 제한 때문에 작은 public repo 중심으로 사용하는 것을 전제로 합니다.
 
 자세한 한계와 실패 케이스는 [docs/failure-cases.md](docs/failure-cases.md)에 정리했습니다.

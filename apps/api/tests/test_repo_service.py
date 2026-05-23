@@ -34,3 +34,9 @@ def test_workspace_path_is_stable_and_stays_inside_root(tmp_path: Path):
 
     assert workspace == tmp_path / "repo_123"
     assert workspace.resolve().is_relative_to(tmp_path.resolve())
+
+
+def test_repo_service_has_clone_timeout_for_free_hosting(tmp_path: Path):
+    service = RepoService(workspace_root=tmp_path, clone_timeout_seconds=30)
+
+    assert service.clone_timeout_seconds == 30

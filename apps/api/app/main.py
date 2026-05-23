@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from app.agents.graph import RepoPilotAgent
 from app.api.routes import analyses, chat, github, patches, repos
@@ -13,6 +15,12 @@ from app.services.github_service import GitHubService
 from app.services.indexing_service import IndexingService
 from app.services.patch_service import PatchService
 from app.services.repo_service import RepoService
+
+
+def mount_frontend(app: FastAPI, static_dir: Path) -> None:
+    index_file = static_dir / "index.html"
+    if index_file.exists():
+        app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")
 
 
 def create_app() -> FastAPI:
@@ -32,7 +40,10 @@ def create_app() -> FastAPI:
     )
     install_error_handlers(app)
     app.state.services = {
-        "repo_service": RepoService(settings.workspace_root),
+        "repo_service": RepoService(
+            settings.workspace_root,
+            clone_timeout_seconds=settings.clone_timeout_seconds,
+        ),
         "indexing_service": IndexingService(
             store=retriever,
             max_files=settings.max_files_indexed,
@@ -53,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(chat.router)
     app.include_router(patches.router)
     app.include_router(github.router)
+    mount_frontend(app, settings.frontend_static_dir)
     return app
 
 

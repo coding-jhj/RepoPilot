@@ -4,6 +4,8 @@
 __pycache__/
 .pytest_cache/
 .next/
+out/
+apps/web/out/
 node_modules/
 dist/
 build/

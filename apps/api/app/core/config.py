@@ -7,9 +7,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "RepoPilot"
     workspace_root: Path = Path(".repopilot-workspaces")
+    frontend_static_dir: Path = Path("../web/out")
     max_files_indexed: int = 500
     max_file_bytes: int = 200_000
     max_repo_bytes: int = 50_000_000
+    clone_timeout_seconds: int = 45
     llm_provider: str = "fake"
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None

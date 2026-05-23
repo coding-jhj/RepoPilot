@@ -1,6 +1,6 @@
 import type { AnalysisResponse, AnalysisTask, PatchResponse, RepoImportResponse } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 async function request<T>(path: string, init: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {

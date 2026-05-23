@@ -142,6 +142,51 @@ Docker:
 docker compose up
 ```
 
+## Free Deployment
+
+RepoPilot is configured for free deployment as a Hugging Face Spaces Docker Space.
+
+Recommended free deployment shape:
+
+```txt
+Hugging Face Spaces CPU Basic
+  -> Dockerfile
+  -> Next.js static export
+  -> FastAPI static file serving
+  -> local static-analysis agent
+```
+
+Steps:
+
+1. Create a new Hugging Face Space.
+2. Select `Docker` as the SDK.
+3. Push this project into the Space repository.
+4. Use this repository's `SPACE_README.md` as the Space `README.md`.
+5. After the build finishes, the Space URL opens the RepoPilot UI.
+
+The free deployment keeps these defaults:
+
+- no paid LLM API
+- no cloud vector database
+- local static-rule analysis
+- temporary workspace storage
+- public GitHub repositories only
+- repo/file size limits
+- mock PR workflow
+
+You can also test the deployment image locally:
+
+```bash
+docker build -t repopilot .
+docker run --rm -p 7860:7860 repopilot
+```
+
+Open:
+
+```txt
+http://localhost:7860
+```
+
 ## Test and Verify
 
 Backend tests:
@@ -200,6 +245,7 @@ REPOPILOT_ANTHROPIC_API_KEY=...
 - [ ] Apply patches in an isolated branch
 - [ ] Create real GitHub pull requests
 - [ ] Add demo GIF and benchmark cases
+- [ ] Add a public Hugging Face Spaces demo link
 
 ## Limitations
 
