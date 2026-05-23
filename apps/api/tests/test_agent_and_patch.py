@@ -24,6 +24,26 @@ def test_agent_overview_includes_evidence_from_retrieved_code():
     assert result.timeline[0].node == "planner"
 
 
+def test_agent_bug_scan_reports_static_rule_without_paid_llm():
+    agent = RepoPilotAgent(llm=FakeLLMProvider())
+
+    result = agent.run(
+        repo_id="repo_1",
+        task="bug_scan",
+        retrieved_chunks=[
+            {
+                "path": "app/security.py",
+                "start_line": 20,
+                "end_line": 24,
+                "content": "def login(password):\n    if password == 'admin123':\n        return True\n",
+            }
+        ],
+    )
+
+    assert any("Hardcoded secret" in finding.title for finding in result.findings)
+    assert result.findings[-1].evidence[0].path == "app/security.py"
+
+
 def test_patch_validator_accepts_scoped_unified_diff():
     diff = """diff --git a/app/main.py b/app/main.py
 --- a/app/main.py

@@ -76,8 +76,9 @@ export default function Home() {
           <p>Repo-aware AI software engineering agent for scoped analysis, tests, patches, and PR review.</p>
         </div>
         <div className="badges">
-          <span>Cloud LLM primary</span>
+          <span>Free-first</span>
           <span>Evidence required</span>
+          <span>Static rules</span>
           <span>Approval-gated patches</span>
         </div>
       </header>

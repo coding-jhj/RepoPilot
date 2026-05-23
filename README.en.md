@@ -1,13 +1,13 @@
 # RepoPilot
 
-> Repo-aware AI software engineering agent for scoped codebase understanding, evidence-backed analysis, patch review, and PR workflows.
+> Free-first local AI software engineering agent for repo analysis, evidence-backed review, and patch drafts.
 
-RepoPilot is a portfolio-grade AI software engineering agent prototype. It is not trying to be a full Devin clone. Instead, it focuses on a realistic and interview-defensible workflow: import a repository, index the code, retrieve relevant evidence, run an agent workflow, show file/line-grounded findings, and generate scoped patch drafts behind a human approval step.
+RepoPilot is a portfolio-grade AI software engineering agent prototype. Its default path does not require paid APIs. It imports a repository, indexes code, retrieves local evidence, runs deterministic static rules, shows file/line-grounded findings, and generates scoped patch drafts behind a human approval step.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-Frontend-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![Agent](https://img.shields.io/badge/Agent-Evidence--first-1c6dd0?style=flat-square)
+![Agent](https://img.shields.io/badge/Agent-Free--first-1c6dd0?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-MVP%20Scaffold-f59e0b?style=flat-square)
 
 ## Why This Project Exists
