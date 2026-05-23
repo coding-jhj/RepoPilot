@@ -8,6 +8,8 @@ Live Demo: [https://jeonghwanju-repopilot.hf.space](https://jeonghwanju-repopilo
 
 RepoPilot은 public GitHub 저장소를 가져와서 코드를 인덱싱하고, 파일/라인 근거가 있는 분석 결과와 patch 초안을 보여주는 무료 웹 데모입니다. OpenAI, Claude, 유료 DB, 유료 vector DB 없이 동작합니다.
 
+프로젝트 구조와 코드를 자세히 이해하려면 [RepoPilot 코드 해설서](docs/repopilot-code-guide.html)를 보면 됩니다.
+
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-Static_UI-000000?style=flat-square&logo=nextdotjs&logoColor=white)
