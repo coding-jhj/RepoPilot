@@ -4,6 +4,8 @@
 
 [English README](README.en.md)
 
+Live Demo: [Hugging Face Spaces](https://jeonghwanju-repopilot.hf.space/)
+
 RepoPilot은 GitHub 저장소를 분석하고, 근거 기반 코드 리뷰와 패치 초안을 생성하는 개발자용 AI Agent입니다. 핵심 방향은 **돈이 들지 않는 무료 실행**입니다.
 
 OpenAI/Claude 같은 유료 API 없이도 저장소를 가져오고, 코드를 인덱싱하고, 정적 분석 규칙으로 위험 후보를 찾고, 파일/라인 근거가 있는 finding과 patch draft를 보여주는 구조입니다. 유료 LLM은 나중에 품질을 높이기 위한 선택 옵션일 뿐, 기본 실행 조건이 아닙니다.
@@ -159,9 +161,15 @@ Docker:
 docker compose up
 ```
 
-## 무료 배포 방법
+## 무료 배포
 
-RepoPilot은 Hugging Face Spaces의 Docker Space로 무료 배포할 수 있도록 구성되어 있습니다.
+RepoPilot은 Hugging Face Spaces의 Docker Space로 무료 배포되어 있습니다.
+
+Live Demo:
+
+```txt
+https://jeonghwanju-repopilot.hf.space/
+```
 
 권장 무료 배포 구조:
 
@@ -263,7 +271,7 @@ REPOPILOT_ANTHROPIC_API_KEY=...
 - [ ] 실제 GitHub Pull Request 생성
 - [ ] 선택적 OpenAI/Claude adapter 추가
 - [ ] demo GIF와 benchmark case 추가
-- [ ] Hugging Face Spaces public demo 링크 추가
+- [x] Hugging Face Spaces public demo 링크 추가
 
 ## 한계
 

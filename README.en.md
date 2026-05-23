@@ -2,6 +2,8 @@
 
 > Free-first local AI software engineering agent for repo analysis, evidence-backed review, and patch drafts.
 
+Live Demo: [Hugging Face Spaces](https://jeonghwanju-repopilot.hf.space/)
+
 RepoPilot is a portfolio-grade AI software engineering agent prototype. Its default path does not require paid APIs. It imports a repository, indexes code, retrieves local evidence, runs deterministic static rules, shows file/line-grounded findings, and generates scoped patch drafts behind a human approval step.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
@@ -144,7 +146,13 @@ docker compose up
 
 ## Free Deployment
 
-RepoPilot is configured for free deployment as a Hugging Face Spaces Docker Space.
+RepoPilot is deployed as a free Hugging Face Spaces Docker Space.
+
+Live Demo:
+
+```txt
+https://jeonghwanju-repopilot.hf.space/
+```
 
 Recommended free deployment shape:
 
@@ -245,7 +253,7 @@ REPOPILOT_ANTHROPIC_API_KEY=...
 - [ ] Apply patches in an isolated branch
 - [ ] Create real GitHub pull requests
 - [ ] Add demo GIF and benchmark cases
-- [ ] Add a public Hugging Face Spaces demo link
+- [x] Add a public Hugging Face Spaces demo link
 
 ## Limitations
 
