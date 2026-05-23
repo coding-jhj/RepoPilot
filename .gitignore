@@ -1,0 +1,10 @@
+.env
+.env.local
+.repopilot-workspaces/
+__pycache__/
+.pytest_cache/
+.next/
+node_modules/
+dist/
+build/
+*.pyc

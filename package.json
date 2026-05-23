@@ -1,0 +1,10 @@
+{
+  "name": "repo-pilot",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "api:test": "cd apps/api && python -m pytest tests",
+    "web:dev": "cd apps/web && next dev",
+    "web:build": "cd apps/web && next build"
+  }
+}

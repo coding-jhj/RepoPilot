@@ -1,0 +1,336 @@
+:root {
+  color-scheme: light;
+  --bg: #f7f8fb;
+  --panel: #ffffff;
+  --line: #d9dee8;
+  --text: #151922;
+  --muted: #667085;
+  --accent: #1c6dd0;
+  --accent-strong: #0d4f9c;
+  --good: #16794c;
+  --warn: #a15c00;
+  --danger: #b42318;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--text);
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+pre {
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+main {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.topbar p {
+  color: var(--muted);
+  margin: 6px 0 0;
+  max-width: 760px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.badges span,
+.status,
+.valid,
+.invalid {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: white;
+  color: var(--muted);
+  padding: 5px 9px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.valid {
+  color: var(--good);
+  border-color: #b7e2ce;
+}
+
+.invalid {
+  color: var(--danger);
+  border-color: #f0b8b2;
+}
+
+.toolbar,
+.controls,
+.repo {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(120px, 180px) auto;
+  align-items: end;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.controls {
+  grid-template-columns: minmax(180px, 280px) minmax(140px, 160px) auto auto;
+}
+
+.repo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+}
+
+label span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.toggle input {
+  width: 16px;
+  min-height: 16px;
+}
+
+.controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+}
+
+.panel,
+.empty {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.empty {
+  color: var(--muted);
+}
+
+.panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel h2 {
+  font-size: 17px;
+  margin: 0;
+}
+
+.summary {
+  color: var(--muted);
+  margin-top: 0;
+}
+
+.findings {
+  display: grid;
+  gap: 10px;
+}
+
+.finding {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.finding div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.finding span {
+  color: var(--warn);
+}
+
+.finding p {
+  color: var(--muted);
+  margin: 8px 0;
+}
+
+.finding code,
+.compact code,
+.repo span {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #f3f5f9;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+.timeline {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.timeline span,
+.messages,
+.compact li {
+  color: var(--muted);
+}
+
+.diff pre {
+  background: #101828;
+  color: #eef4ff;
+  border-radius: 8px;
+  padding: 14px;
+  min-height: 280px;
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 13px;
+}
+
+.messages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.compact {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.compact ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.error {
+  background: #fff1f0;
+  color: var(--danger);
+  border: 1px solid #ffccc7;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 900px) {
+  main {
+    padding: 16px;
+  }
+
+  .topbar,
+  .grid {
+    display: block;
+  }
+
+  .badges {
+    justify-content: flex-start;
+    margin-top: 12px;
+  }
+
+  .toolbar,
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .panel,
+  .empty {
+    margin-bottom: 14px;
+  }
+
+  .timeline li {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,52 @@
+services:
+  api:
+    image: python:3.12-slim
+    working_dir: /app/apps/api
+    command: sh -c "pip install -e .[dev] && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      REPOPILOT_LLM_PROVIDER: fake
+      REPOPILOT_WORKSPACE_ROOT: /app/.repopilot-workspaces
+
+  web:
+    image: node:20-slim
+    working_dir: /app/apps/web
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    depends_on:
+      - api
+
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: repopilot
+      POSTGRES_PASSWORD: repopilot
+      POSTGRES_DB: repopilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  qdrant-data:
+  postgres-data:
