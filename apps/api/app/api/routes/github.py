@@ -16,4 +16,10 @@ def create_pull_request(
         body=payload.body,
         diff=payload.diff,
         confirmed=payload.confirmed,
+        token=payload.token,
+        owner=payload.owner,
+        repo=payload.repo,
+        base=payload.base,
+        head=payload.head,
+        files=[file.model_dump() for file in payload.files] if payload.files else None,
     )

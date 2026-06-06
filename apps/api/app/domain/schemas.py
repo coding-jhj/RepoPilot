@@ -79,12 +79,25 @@ class PatchResponse(BaseModel):
     messages: list[str]
 
 
+class PullRequestFile(BaseModel):
+    path: str = Field(min_length=1)
+    content: str
+
+
 class PullRequestRequest(BaseModel):
     repo_id: str
     title: str
     body: str
     diff: str
     confirmed: bool = False
+    # Optional real-PR fields. When a token is present the service opens a real
+    # pull request; otherwise it stays a mocked demo response.
+    token: str | None = None
+    owner: str | None = None
+    repo: str | None = None
+    base: str = "main"
+    head: str | None = None
+    files: list[PullRequestFile] | None = None
 
 
 class PullRequestResponse(BaseModel):

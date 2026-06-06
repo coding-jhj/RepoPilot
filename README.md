@@ -22,7 +22,7 @@ RepoPilot은 public GitHub 저장소를 가져와서 코드를 인덱싱하고, 
 - 저장소 clone 및 임시 workspace 생성
 - Python, JavaScript, TypeScript, Markdown 파일 인덱싱
 - Python AST 기반 class/function/import 추출
-- JS/TS 간단 symbol/import 추출
+- JS/TS/TSX tree-sitter 기반 정밀 파싱 (class, method, interface, type, enum, arrow-function, import)
 - local retrieval 기반 관련 코드 chunk 검색
 - agent timeline 표시
 - 파일/라인 근거가 포함된 finding 표시
@@ -32,16 +32,15 @@ RepoPilot은 public GitHub 저장소를 가져와서 코드를 인덱싱하고, 
   - `eval()` 사용
 - 선택한 evidence path 기준 patch draft 생성
 - patch가 승인된 파일 범위 안에 있는지 검증
+- 실제 GitHub Pull Request 생성 (opt-in: 토큰 제공 시 브랜치 생성 → 파일 커밋 → PR 오픈, 토큰 없으면 mock)
 - FastAPI가 Next.js static export를 함께 서빙
 - Hugging Face Spaces CPU Basic 무료 배포
 
 ## 아직 안 되는 것
 
 - 실제 LLM 기반 깊은 버그 추론
-- 실제 GitHub Pull Request 생성
-- patch를 원본 repo에 직접 적용
+- unified diff 자동 적용 (실제 PR은 명시적 파일 내용을 받음)
 - 대형 repo 전체 분석
-- tree-sitter 기반 정밀 parsing
 - 영구 저장소 또는 사용자별 history 저장
 
 이 프로젝트는 “완성형 Devin 클론”이 아니라, **돈 안 드는 무료 환경에서 실무형 Agent 구조를 어디까지 만들 수 있는지 보여주는 MVP**입니다.
@@ -100,9 +99,10 @@ Planner
 | Backend | FastAPI, Pydantic |
 | Frontend | Next.js static export, React, TypeScript |
 | Deployment | Hugging Face Spaces Docker |
-| Code Analysis | Python AST, JS/TS regex scaffold |
+| Code Analysis | Python AST, JS/TS/TSX tree-sitter (regex fallback) |
 | Retrieval | In-memory chunk search |
 | Static Rules | hardcoded secret, bare except, eval 탐지 |
+| GitHub | 실제 PR 생성 (opt-in 토큰, httpx REST) |
 | LLM | 기본 사용 안 함 |
 | Tests | pytest, Next.js build |
 
@@ -177,7 +177,8 @@ npm run build
 
 현재 검증 상태:
 
-- backend tests: `17 passed`
+- backend tests: `23 passed` (Python 3.13)
+- tree-sitter JS/TS 파싱 + 실제 PR 흐름 회귀 테스트 포함
 - Next.js static export build 통과
 - Hugging Face Space `/health` 응답 확인
 - Hugging Face Space 웹 페이지 HTTP `200` 확인
@@ -188,10 +189,13 @@ npm run build
 apps/api/app/main.py                     # FastAPI app + static frontend serving
 apps/api/app/services/repo_service.py    # GitHub URL validation, clone, workspace path
 apps/api/app/services/indexing_service.py# file walking, parsing, chunk indexing
-apps/api/app/code/parser.py              # Python/JS/TS lightweight parser
+apps/api/app/code/parser.py              # Python ast + JS/TS dispatch (regex fallback)
+apps/api/app/code/treesitter_parser.py   # tree-sitter JS/TS/TSX symbol & import 추출
 apps/api/app/code/rules.py               # free static-analysis rules
 apps/api/app/agents/graph.py             # agent node workflow runner
 apps/api/app/services/patch_service.py   # patch draft + scope validation
+apps/api/app/services/github_service.py  # PR entry (mock vs real, 토큰 분기)
+apps/api/app/services/github_pr_service.py # 실제 GitHub REST PR 흐름
 apps/web/app/page.tsx                    # main demo UI
 Dockerfile                               # Hugging Face Spaces deployment image
 ```
@@ -199,11 +203,11 @@ Dockerfile                               # Hugging Face Spaces deployment image
 ## 다음 개선 계획
 
 - 정적 분석 rule set 확장
-- tree-sitter 기반 parser 교체
 - dependency graph 기반 위험 탐지
 - patch template 품질 개선
 - 작은 demo repo benchmark 추가
-- 실제 GitHub PR 생성은 선택 기능으로 분리
+- unified diff 자동 적용으로 PR 파일 생성 자동화
+- 프론트엔드에서 PR 토큰 입력 UI 연결
 
 ## 한계
 

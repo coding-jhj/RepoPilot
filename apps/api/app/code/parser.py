@@ -4,6 +4,7 @@ import ast
 import re
 from pathlib import Path
 
+from app.code import treesitter_parser
 from app.code.language_registry import language_for_path
 from app.domain.models import CodeDocument, CodeSymbol
 
@@ -17,7 +18,7 @@ class CodeParser:
         if language == "python":
             imports, symbols = self._parse_python(content)
         elif language in {"typescript", "javascript"}:
-            imports, symbols = self._parse_js_like(content)
+            imports, symbols = self._parse_js_like(content, language, relative_path)
         else:
             imports, symbols = [], []
 
@@ -47,7 +48,18 @@ class CodeParser:
         symbols.sort(key=lambda symbol: symbol.line)
         return imports, symbols
 
-    def _parse_js_like(self, content: str) -> tuple[list[str], list[CodeSymbol]]:
+    def _parse_js_like(
+        self, content: str, language: str, path: str
+    ) -> tuple[list[str], list[CodeSymbol]]:
+        if treesitter_parser.AVAILABLE:
+            try:
+                return treesitter_parser.parse(content, language, path)
+            except Exception:
+                # Any grammar/parse hiccup falls through to the regex scanner below.
+                pass
+        return self._parse_js_like_regex(content)
+
+    def _parse_js_like_regex(self, content: str) -> tuple[list[str], list[CodeSymbol]]:
         imports = re.findall(r"import\s+(?:.+?\s+from\s+)?['\"](.+?)['\"]", content)
         symbols: list[CodeSymbol] = []
 
