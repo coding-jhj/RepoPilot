@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, FileDiff, SearchCode } from "lucide-react";
+import { Bot, FileDiff, GitPullRequest, SearchCode, ShieldCheck, Workflow } from "lucide-react";
 import { useState } from "react";
 import { AnalysisDashboard } from "../components/analysis-dashboard";
 import { CodeViewer } from "../components/code-viewer";
@@ -10,7 +10,14 @@ import { RepoInput } from "../components/repo-input";
 import { createPatch, importRepo, indexRepo, runAnalysis } from "../lib/api";
 import type { AnalysisResponse, AnalysisTask, PatchResponse, RepoImportResponse } from "../lib/types";
 
-const TASKS: AnalysisTask[] = ["overview", "architecture", "bug_scan", "test_generation", "patch_generation"];
+const TASKS: AnalysisTask[] = [
+  "overview",
+  "architecture",
+  "bug_scan",
+  "refactor_plan",
+  "test_generation",
+  "patch_generation",
+];
 
 export default function Home() {
   const [repo, setRepo] = useState<RepoImportResponse | null>(null);
@@ -70,18 +77,45 @@ export default function Home() {
 
   return (
     <main>
-      <header className="topbar">
-        <div>
-          <h1>RepoPilot</h1>
-          <p>Repo-aware AI software engineering agent for scoped analysis, tests, patches, and PR review.</p>
+      <header className="hero">
+        <div className="heroCopy">
+          <span className="eyebrow">Repo-aware software engineering agent</span>
+          <h1>Analyze a GitHub repo with evidence before drafting patches.</h1>
+          <p>
+            RepoPilot imports a public repository, indexes real code, runs deterministic analysis,
+            and keeps every finding tied to file and line evidence.
+          </p>
+          <div className="badges">
+            <span><ShieldCheck size={14} /> Evidence required</span>
+            <span><Workflow size={14} /> Free-first workflow</span>
+            <span><GitPullRequest size={14} /> Token-gated PRs</span>
+          </div>
         </div>
-        <div className="badges">
-          <span>Free-first</span>
-          <span>Evidence required</span>
-          <span>Static rules</span>
-          <span>Approval-gated patches</span>
+        <div className="heroCard" aria-label="RepoPilot workflow summary">
+          <strong>Workflow</strong>
+          <ol>
+            <li>Import & index repo</li>
+            <li>Run scoped analysis</li>
+            <li>Review evidence</li>
+            <li>Generate approved patch</li>
+          </ol>
         </div>
       </header>
+
+      <section className="metrics" aria-label="RepoPilot guarantees">
+        <article>
+          <strong>0 paid APIs</strong>
+          <span>Runs without OpenAI, Claude, hosted DB, or paid vector DB by default.</span>
+        </article>
+        <article>
+          <strong>File/line evidence</strong>
+          <span>Findings are grounded in retrieved code paths and line ranges.</span>
+        </article>
+        <article>
+          <strong>Approval-gated patches</strong>
+          <span>Patch drafts are validated against explicitly approved paths.</span>
+        </article>
+      </section>
 
       <RepoInput busy={busy} onSubmit={handleImport} />
       {error && <div className="error">{error}</div>}

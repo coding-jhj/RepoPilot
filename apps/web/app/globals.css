@@ -18,7 +18,9 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at top left, rgba(28, 109, 208, 0.18), transparent 32rem),
+    linear-gradient(180deg, #eef4ff 0%, var(--bg) 26rem);
   color: var(--text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -71,36 +73,117 @@ main {
   padding: 24px;
 }
 
-.topbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  align-items: stretch;
   gap: 24px;
   margin-bottom: 18px;
 }
 
-.topbar h1 {
-  margin: 0;
-  font-size: 32px;
+.heroCopy,
+.heroCard,
+.metrics article {
+  border: 1px solid rgba(217, 222, 232, 0.9);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 48px rgba(16, 24, 40, 0.08);
+  backdrop-filter: blur(14px);
 }
 
-.topbar p {
+.heroCopy {
+  border-radius: 18px;
+  padding: 30px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid #b9d6ff;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: var(--accent-strong);
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hero h1 {
+  max-width: 880px;
+  margin: 14px 0 0;
+  font-size: clamp(36px, 6vw, 68px);
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+}
+
+.hero p {
   color: var(--muted);
-  margin: 6px 0 0;
+  margin: 18px 0 0;
   max-width: 760px;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.heroCard {
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.heroCard strong {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 18px;
+}
+
+.heroCard ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 22px;
+  color: var(--muted);
+}
+
+.heroCard li::marker {
+  color: var(--accent);
+  font-weight: 800;
 }
 
 .badges {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.metrics article {
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.metrics strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.metrics span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .badges span,
 .status,
 .valid,
 .invalid {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: white;
@@ -310,14 +393,20 @@ label span {
     padding: 16px;
   }
 
-  .topbar,
-  .grid {
+  .hero,
+  .grid,
+  .metrics {
     display: block;
+  }
+
+  .heroCopy,
+  .heroCard,
+  .metrics article {
+    margin-bottom: 14px;
   }
 
   .badges {
     justify-content: flex-start;
-    margin-top: 12px;
   }
 
   .toolbar,
