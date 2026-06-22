@@ -2,7 +2,7 @@
 
 > **public GitHub 저장소를 붙여넣으면 → 파일·라인 근거가 달린 분석 결과 → scope 검증된 patch 초안 → 실제 PR 까지.** 유료 API 없이 동작하는 무료 코드 분석 Agent.
 
-[English README](README.en.md) · **Live Demo: [jeonghwanju-repopilot.hf.space](https://jeonghwanju-repopilot.hf.space/)** · [코드 해설서](https://coding-jhj.github.io/RepoPilot/)
+[English README](README.en.md) · **Live Demo: [jeonghwanju-repopilot.hf.space](https://jeonghwanju-repopilot.hf.space/)** · [코드 해설서](https://coding-jhj.github.io/RepoPilot/repopilot-code-guide.html)
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=flat-square&logo=fastapi&logoColor=white)
