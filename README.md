@@ -1,20 +1,21 @@
 # RepoPilot
 
-> 무료로 배포된 GitHub 저장소 분석 Agent
+> **public GitHub 저장소를 붙여넣으면 → 파일·라인 근거가 달린 분석 결과 → scope 검증된 patch 초안 → 실제 PR 까지.** 유료 API 없이 동작하는 무료 코드 분석 Agent.
 
-[English README](README.en.md)
-
-Live Demo: [https://jeonghwanju-repopilot.hf.space](https://jeonghwanju-repopilot.hf.space/)
-
-RepoPilot은 public GitHub 저장소를 가져와서 코드를 인덱싱하고, 파일/라인 근거가 있는 분석 결과와 patch 초안을 보여주는 무료 웹 데모입니다. OpenAI, Claude, 유료 DB, 유료 vector DB 없이 동작합니다.
-
-프로젝트 구조와 코드를 자세히 이해하려면 웹으로 렌더링되는 [RepoPilot 코드 해설서](https://coding-jhj.github.io/RepoPilot/)를 보면 됩니다.
+[English README](README.en.md) · **Live Demo: [jeonghwanju-repopilot.hf.space](https://jeonghwanju-repopilot.hf.space/)** · [코드 해설서](https://coding-jhj.github.io/RepoPilot/)
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-Static_UI-000000?style=flat-square&logo=nextdotjs&logoColor=white)
 ![Hugging Face](https://img.shields.io/badge/Deploy-Hugging%20Face%20Spaces-FFD21E?style=flat-square)
 ![Free](https://img.shields.io/badge/Cost-Free--first-1c6dd0?style=flat-square)
+![Gemini](https://img.shields.io/badge/Deep%20Analysis-Gemini%203.5%20Flash-8E75FF?style=flat-square&logo=googlegemini&logoColor=white)
+
+![RepoPilot demo](docs/app.png)
+
+RepoPilot은 OpenAI·Claude·유료 DB·유료 vector DB 없이 동작합니다. 기본은 결정론적 정적 분석(무료)이고,
+**deep analysis**를 켜고 무료 Gemini 키를 넣으면 같은 evidence 위에서 LLM 추론까지 더해집니다.
+모든 finding은 반드시 가져온 코드의 파일·라인 근거를 함께 보여줍니다.
 
 ## 현재 되는 것
 
@@ -30,6 +31,7 @@ RepoPilot은 public GitHub 저장소를 가져와서 코드를 인덱싱하고, 
   - hardcoded secret 후보
   - bare `except:`
   - `eval()` 사용
+- **deep analysis (선택)**: 무료 Gemini 키를 넣으면 retrieved evidence 위에서 LLM 추론으로 추가 finding + 요약 생성 (기본값 `gemini-3.5-flash`, 키 없으면 정적 분석만)
 - 선택한 evidence path 기준 patch draft 생성
 - patch가 승인된 파일 범위 안에 있는지 검증
 - 실제 GitHub Pull Request 생성 (opt-in: 토큰 제공 시 브랜치 생성 → 파일 커밋 → PR 오픈, 토큰 없으면 mock)
@@ -38,7 +40,7 @@ RepoPilot은 public GitHub 저장소를 가져와서 코드를 인덱싱하고, 
 
 ## 아직 안 되는 것
 
-- 실제 LLM 기반 깊은 버그 추론
+- 서버 측 기본 LLM (deep analysis는 사용자가 무료 Gemini 키를 직접 제공해야 작동)
 - unified diff 자동 적용 (실제 PR은 명시적 파일 내용을 받음)
 - 대형 repo 전체 분석
 - 영구 저장소 또는 사용자별 history 저장
