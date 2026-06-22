@@ -29,6 +29,8 @@ class AnalysisRequest(BaseModel):
         "patch_generation",
     ]
     deep: bool = False
+    api_key: str | None = None
+    model: str | None = None
 
 
 class EvidenceResponse(BaseModel):

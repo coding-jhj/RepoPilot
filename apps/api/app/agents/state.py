@@ -13,3 +13,4 @@ class AgentState:
     findings: list[Finding] = field(default_factory=list)
     timeline: list[AgentStep] = field(default_factory=list)
     summary: str = ""
+    deep: bool = False

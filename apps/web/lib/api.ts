@@ -28,10 +28,22 @@ export async function indexRepo(repoId: string): Promise<{ files_indexed: number
   return request(`/repos/${repoId}/index`, { method: "POST", body: "{}" });
 }
 
-export async function runAnalysis(repoId: string, task: AnalysisTask, deep: boolean): Promise<AnalysisResponse> {
+export async function runAnalysis(
+  repoId: string,
+  task: AnalysisTask,
+  deep: boolean,
+  apiKey?: string,
+  model?: string
+): Promise<AnalysisResponse> {
   return request<AnalysisResponse>("/analyses", {
     method: "POST",
-    body: JSON.stringify({ repo_id: repoId, task, deep })
+    body: JSON.stringify({
+      repo_id: repoId,
+      task,
+      deep,
+      api_key: apiKey || null,
+      model: model || null
+    })
   });
 }
 

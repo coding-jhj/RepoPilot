@@ -26,8 +26,12 @@ class RepoPilotAgent:
             ReviewerNode(llm),
         ]
 
-    def run(self, repo_id: str, task: str, retrieved_chunks: list[dict]) -> AgentResult:
-        state = AgentState(repo_id=repo_id, task=task, retrieved_chunks=retrieved_chunks)
+    def run(
+        self, repo_id: str, task: str, retrieved_chunks: list[dict], deep: bool = False
+    ) -> AgentResult:
+        state = AgentState(
+            repo_id=repo_id, task=task, retrieved_chunks=retrieved_chunks, deep=deep
+        )
         for node in self.nodes:
             state = node.run(state)
         return AgentResult(

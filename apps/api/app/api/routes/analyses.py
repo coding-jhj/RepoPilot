@@ -12,5 +12,7 @@ def create_analysis(payload: AnalysisRequest, app_services: dict = Depends(servi
         repo_id=payload.repo_id,
         task=payload.task,
         deep=payload.deep,
+        api_key=payload.api_key,
+        model=payload.model,
     )
     return result
