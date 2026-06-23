@@ -11,15 +11,22 @@ import {
   ListChecks,
   Loader2,
   Search,
+  ShieldCheck,
   Sparkles,
   Wand2,
 } from "lucide-react";
 import { useState } from "react";
-import { createPatch, importRepo, indexRepo, runAnalysis } from "../lib/api";
+import {
+  createPullRequestFromPatch,
+  importRepo,
+  indexRepo,
+  runAnalysis,
+} from "../lib/api";
 import type {
   AnalysisResponse,
   AnalysisTask,
-  PatchResponse,
+  PatchDraft,
+  PullRequestResult,
   RepoImportResponse,
 } from "../lib/types";
 
@@ -48,22 +55,27 @@ const SEVERITY_RANK: Record<string, number> = { high: 3, medium: 2, low: 1, info
 export default function Home() {
   const [repo, setRepo] = useState<RepoImportResponse | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
-  const [patch, setPatch] = useState<PatchResponse | null>(null);
   const [url, setUrl] = useState("");
   const [branch, setBranch] = useState("main");
-  const [task, setTask] = useState<AnalysisTask>("bug_scan");
+  const [task, setTask] = useState<AnalysisTask>("patch_generation");
   const [deep, setDeep] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(DEFAULT_MODEL);
-  const [busy, setBusy] = useState<"" | "import" | "analyze" | "patch">("");
+  const [busy, setBusy] = useState<"" | "import" | "analyze">("");
   const [error, setError] = useState<string | null>(null);
+  // Real PR controls (opt-in): a GitHub token opens an actual PR; without one the
+  // backend returns a mocked response and never touches the repo.
+  const [prToken, setPrToken] = useState("");
+  const [prConfirm, setPrConfirm] = useState(false);
+  const [prBusy, setPrBusy] = useState<string | null>(null); // patch path being opened
+  const [prResult, setPrResult] = useState<PullRequestResult | null>(null);
 
   async function handleImport() {
     if (!url.trim()) return;
     setBusy("import");
     setError(null);
     setAnalysis(null);
-    setPatch(null);
+    setPrResult(null);
     try {
       const imported = await importRepo(url.trim(), branch.trim() || "main");
       await indexRepo(imported.repo_id);
@@ -79,6 +91,7 @@ export default function Home() {
     if (!repo) return;
     setBusy("analyze");
     setError(null);
+    setPrResult(null);
     try {
       setAnalysis(await runAnalysis(repo.repo_id, task, deep, deep ? apiKey : undefined, model));
     } catch (caught) {
@@ -88,23 +101,30 @@ export default function Home() {
     }
   }
 
-  async function handlePatch() {
-    const evidence = analysis?.findings[0]?.evidence[0];
-    if (!repo || !analysis || !evidence) return;
-    setBusy("patch");
+  async function handleOpenPr(draft: PatchDraft) {
+    if (!repo) return;
+    setPrBusy(draft.path);
     setError(null);
+    setPrResult(null);
     try {
-      setPatch(
-        await createPatch(
-          repo.repo_id,
-          `Improve the selected finding: ${analysis.findings[0].title}`,
-          [evidence.path]
-        )
+      setPrResult(
+        await createPullRequestFromPatch({
+          repoId: repo.repo_id,
+          owner: repo.owner,
+          repo: repo.name,
+          path: draft.path,
+          diff: draft.diff,
+          title: `RepoPilot: ${draft.finding_title}`,
+          body: `Automated ${draft.kind} from RepoPilot for: ${draft.finding_title}`,
+          token: prToken.trim(),
+          confirmed: prConfirm,
+          base: branch.trim() || "main",
+        })
       );
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Patch failed");
+      setError(caught instanceof Error ? caught.message : "PR failed");
     } finally {
-      setBusy("");
+      setPrBusy(null);
     }
   }
 
@@ -239,14 +259,9 @@ export default function Home() {
             {busy === "analyze" ? <Loader2 className="spin" size={16} /> : <Wand2 size={16} />}
             Run analysis
           </button>
-          <button
-            className="btn"
-            onClick={handlePatch}
-            disabled={!analysis || !analysis.findings[0]?.evidence[0] || busy !== ""}
-          >
-            {busy === "patch" ? <Loader2 className="spin" size={16} /> : <FileDiff size={16} />}
-            Generate patch
-          </button>
+          <span className="muted">
+            Pick <strong>Patch generation</strong> to draft fixes; add Gemini for real fix diffs.
+          </span>
         </div>
 
         {error && (
@@ -298,18 +313,65 @@ export default function Home() {
             </div>
           </div>
 
-          {patch && (
+          {analysis.patches.length > 0 && (
             <div className="card">
               <h3>
-                <FileDiff size={15} /> Patch draft
-                <span className={patch.valid ? "pill ok" : "pill bad"}>
-                  {patch.valid ? "scope-validated" : "rejected"}
-                </span>
+                <FileDiff size={15} /> Patch drafts <span className="count">{analysis.patches.length}</span>
               </h3>
-              {patch.messages.length > 0 && (
-                <p className="muted">{patch.messages.join(" · ")}</p>
+              <div className="pr-controls">
+                <label className="field grow">
+                  <span><GitPullRequest size={13} /> GitHub token (optional — opens a real PR; blank = mock)</span>
+                  <input
+                    type="password"
+                    value={prToken}
+                    onChange={(event) => setPrToken(event.target.value)}
+                    placeholder="ghp_... (needs repo scope on this repository)"
+                    spellCheck={false}
+                  />
+                </label>
+                <label className="switch">
+                  <input type="checkbox" checked={prConfirm} onChange={(event) => setPrConfirm(event.target.checked)} />
+                  <span className="track" aria-hidden />
+                  <span className="switch-label">I confirm opening a PR</span>
+                </label>
+              </div>
+
+              {prResult && (
+                <div className={prResult.status === "created" ? "pr-result ok" : "pr-result"}>
+                  <strong>{prResult.status}</strong> · {prResult.message}
+                  {prResult.url && (
+                    <> · <a href={prResult.url} target="_blank" rel="noreferrer">view PR →</a></>
+                  )}
+                </div>
               )}
-              <pre className="diff">{patch.diff}</pre>
+
+              <ul className="patches">
+                {analysis.patches.map((draft, index) => (
+                  <li key={`${draft.path}-${index}`}>
+                    <div className="patch-head">
+                      <span className={draft.kind === "fix" ? "pill ok" : "pill"}>
+                        {draft.kind === "fix" ? "fix diff" : "review scaffold"}
+                      </span>
+                      {draft.kind === "fix" && draft.verified && (
+                        <span className="pill verified"><ShieldCheck size={12} /> defect removed</span>
+                      )}
+                      <code className="evidence">{draft.path}</code>
+                      <button
+                        className="btn small"
+                        onClick={() => handleOpenPr(draft)}
+                        disabled={prBusy !== null}
+                      >
+                        {prBusy === draft.path ? <Loader2 className="spin" size={14} /> : <GitPullRequest size={14} />}
+                        Open PR
+                      </button>
+                    </div>
+                    <pre className="diff">{draft.diff}</pre>
+                  </li>
+                ))}
+              </ul>
+              <p className="muted">
+                A real PR needs a token with write access to this repo and the confirm toggle; otherwise the result is a mock.
+              </p>
             </div>
           )}
         </section>

@@ -24,11 +24,26 @@ export type AgentStep = {
   summary: string;
 };
 
+export type PatchDraft = {
+  path: string;
+  diff: string;
+  finding_title: string;
+  kind: string; // "scaffold" (review marker) | "fix" (LLM-proposed change)
+  verified: boolean; // fix only: flagged static defect gone after the change
+};
+
 export type AnalysisResponse = {
   status: string;
   summary: string;
   findings: Finding[];
   timeline: AgentStep[];
+  patches: PatchDraft[];
+};
+
+export type PullRequestResult = {
+  status: string;
+  url: string | null;
+  message: string;
 };
 
 export type RepoImportResponse = {

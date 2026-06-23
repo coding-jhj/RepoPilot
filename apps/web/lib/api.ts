@@ -1,4 +1,10 @@
-import type { AnalysisResponse, AnalysisTask, PatchResponse, RepoImportResponse } from "./types";
+import type {
+  AnalysisResponse,
+  AnalysisTask,
+  PatchResponse,
+  PullRequestResult,
+  RepoImportResponse,
+} from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
@@ -54,6 +60,35 @@ export async function createPatch(repoId: string, instruction: string, approvedP
       repo_id: repoId,
       instruction,
       approved_paths: approvedPaths
+    })
+  });
+}
+
+export async function createPullRequestFromPatch(input: {
+  repoId: string;
+  owner: string;
+  repo: string;
+  path: string;
+  diff: string;
+  title: string;
+  body: string;
+  token: string;
+  confirmed: boolean;
+  base?: string;
+}): Promise<PullRequestResult> {
+  return request<PullRequestResult>("/github/pr-from-patch", {
+    method: "POST",
+    body: JSON.stringify({
+      repo_id: input.repoId,
+      owner: input.owner,
+      repo: input.repo,
+      path: input.path,
+      diff: input.diff,
+      title: input.title,
+      body: input.body,
+      token: input.token,
+      confirmed: input.confirmed,
+      base: input.base || "main"
     })
   });
 }
