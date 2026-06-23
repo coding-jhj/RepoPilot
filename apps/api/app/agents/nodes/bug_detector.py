@@ -7,6 +7,11 @@ from app.code.rules import StaticRuleAnalyzer
 from app.core.llm import LLMError, LLMProvider
 from app.domain.models import AgentStep, Evidence, Finding
 
+# Title of the fallback finding emitted when no static rule or LLM finding fires.
+# Exported so the eval harness can exclude it when counting substantive detections
+# (a title change here must not silently corrupt the metrics).
+MANUAL_REVIEW_TITLE = "Manual review candidate from selected code"
+
 _SEVERITIES = {"info", "low", "medium", "high"}
 _LLM_SYSTEM = (
     "You are a senior software engineer reviewing a single code chunk for real bugs, "
@@ -54,7 +59,7 @@ class BugDetectorNode:
         chunk = state.retrieved_chunks[0]
         state.findings.append(
             Finding(
-                title="Manual review candidate from selected code",
+                title=MANUAL_REVIEW_TITLE,
                 summary=(
                     "No built-in static rule matched this evidence. Review the selected "
                     "code path manually or enable deep analysis with a Gemini key for LLM reasoning."
