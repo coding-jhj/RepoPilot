@@ -1,26 +1,49 @@
-"""Score the patch_writer path: are drafted scaffolds valid and in-scope?
+"""Score the patch_writer path: static scaffold baseline vs deep (Gemini) fix arm.
 
     cd apps/api
-    python -m eval.patch_run
+    python -m eval.patch_run                                # static baseline (offline)
+    REPOPILOT_GEMINI_API_KEY=... python -m eval.patch_run   # + deep fix arm
 
-Fully deterministic and offline: the static baseline drafts one scaffold per
-static finding and every scaffold must apply cleanly and stay in scope. There is
-no live-LLM arm here — fix correctness is out of scope for this eval (see
-patch_harness.py).
+The static baseline drafts one review scaffold per static finding; every scaffold
+must apply cleanly and stay in scope, so its numbers are deterministic and
+committable. The deep arm asks a live model for an actual fix per finding: the
+diff is appliable by construction, but fix *correctness* is not checked here, so
+treat any deep number as an illustrative sample run, not a pinned result.
 """
 
 from __future__ import annotations
 
-from eval.patch_harness import evaluate_patches
+import os
+
+from app.core.llm import build_llm_provider
+from eval.patch_harness import PatchMetrics, evaluate_patches
+
+
+def _line(label: str, m: PatchMetrics) -> str:
+    return (
+        f"{label:<18} patches={m.patches} appliable={m.appliable}/{m.patches} "
+        f"in_scope={m.in_scope}/{m.patches} fixes={m.fixes}/{m.patches} (n={m.n})"
+    )
 
 
 def main() -> None:
-    m = evaluate_patches()
-    print(
-        f"static baseline    patches={m.patches} "
-        f"appliable={m.appliable}/{m.patches} in_scope={m.in_scope}/{m.patches} "
-        f"(n={m.n})"
+    print(_line("static baseline", evaluate_patches()))
+
+    api_key = os.environ.get("REPOPILOT_GEMINI_API_KEY") or os.environ.get(
+        "GEMINI_API_KEY"
     )
+    if not api_key:
+        print(
+            "deep (gemini)      skipped (set REPOPILOT_GEMINI_API_KEY to run the "
+            "opt-in deep fix arm; its diffs are appliable but unverified — a sample, "
+            "not pinned)"
+        )
+        return
+
+    gemini = build_llm_provider("gemini", api_key=api_key)
+    deep = evaluate_patches(gemini, deep=True)
+    print(_line("deep (gemini)*", deep))
+    print("* sample run, not reproducible; fix correctness is not checked here")
 
 
 if __name__ == "__main__":

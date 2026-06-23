@@ -31,9 +31,10 @@ _REPO_ID = "patch-eval"
 
 @dataclass(frozen=True)
 class PatchMetrics:
-    patches: int      # total scaffolds drafted across all cases
+    patches: int      # total patches drafted across all cases
     appliable: int    # of those, how many apply cleanly to their source
     in_scope: int     # of those, how many touch only their evidence path
+    fixes: int        # of those, how many are deep LLM fix drafts (vs scaffolds)
     n: int            # cases evaluated
 
 
@@ -59,15 +60,18 @@ def evaluate_patches(
     llm = llm or FakeLLMProvider()
     cases = cases or CASES
     validator = PatchService()
-    patches = appliable = in_scope = 0
+    patches = appliable = in_scope = fixes = 0
     for case in cases:
         source = {case.chunk["path"]: case.chunk["content"]}
         for patch in _patches_for(case, llm, deep):
             patches += 1
+            if patch.kind == "fix":
+                fixes += 1
             if patch_applies(patch.diff, source):
                 appliable += 1
             if validator.validate(patch.diff, [patch.path]).valid:
                 in_scope += 1
     return PatchMetrics(
-        patches=patches, appliable=appliable, in_scope=in_scope, n=len(cases)
+        patches=patches, appliable=appliable, in_scope=in_scope, fixes=fixes,
+        n=len(cases),
     )
