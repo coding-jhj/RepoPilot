@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.core.errors import install_error_handlers
 from app.core.llm import build_llm_provider
 from app.core.logging import configure_logging
+from app.rag.embedder import build_embedder
 from app.rag.qdrant_store import LocalQdrantLikeStore
 from app.services.analysis_service import AnalysisService
 from app.services.github_service import GitHubService
@@ -26,7 +27,8 @@ def mount_frontend(app: FastAPI, static_dir: Path) -> None:
 def create_app() -> FastAPI:
     configure_logging()
     settings = get_settings()
-    retriever = LocalQdrantLikeStore()
+    embedder = build_embedder() if settings.use_embeddings else None
+    retriever = LocalQdrantLikeStore(embedder=embedder)
     llm = build_llm_provider(settings.llm_provider)
     agent = RepoPilotAgent(llm=llm)
 

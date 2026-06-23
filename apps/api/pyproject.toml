@@ -19,6 +19,12 @@ dev = [
   "pytest>=8.2.0",
   "pytest-asyncio>=0.23.0",
 ]
+# Optional: real semantic retrieval. Pulls torch (CPU) + the MiniLM weights.
+# Kept out of the default install so the deterministic path and test suite stay
+# lean and offline; enable with REPOPILOT_USE_EMBEDDINGS=true.
+embeddings = [
+  "sentence-transformers>=2.2.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

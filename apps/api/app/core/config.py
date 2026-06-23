@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     max_file_bytes: int = 200_000
     max_repo_bytes: int = 50_000_000
     clone_timeout_seconds: int = 45
+    # Off by default: the lean deterministic path uses keyword retrieval. Set
+    # REPOPILOT_USE_EMBEDDINGS=true to load the MiniLM embedder (needs the
+    # [embeddings] extra) for semantic search.
+    use_embeddings: bool = False
     llm_provider: str = "fake"
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
