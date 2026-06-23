@@ -77,6 +77,13 @@ class AgentResult:
 
 
 @dataclass(frozen=True)
+class Patch:
+    path: str
+    diff: str
+    finding_title: str
+
+
+@dataclass(frozen=True)
 class PatchValidationReport:
     valid: bool
     touched_paths: list[str]

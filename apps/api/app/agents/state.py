@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.domain.models import AgentStep, Finding
+from app.domain.models import AgentStep, Finding, Patch
 
 
 @dataclass
@@ -14,3 +14,4 @@ class AgentState:
     timeline: list[AgentStep] = field(default_factory=list)
     summary: str = ""
     deep: bool = False
+    patches: list[Patch] = field(default_factory=list)

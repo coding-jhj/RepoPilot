@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from app.code.diff import build_git_diff
 from app.domain.models import PatchValidationReport
 
 
@@ -25,14 +26,8 @@ class PatchService:
     def draft_patch(self, instruction: str, approved_paths: list[str]) -> str:
         target = approved_paths[0] if approved_paths else "README.md"
         note = instruction.replace("\n", " ")[:120]
-        return (
-            f"diff --git a/{target} b/{target}\n"
-            f"--- a/{target}\n"
-            f"+++ b/{target}\n"
-            "@@ -1,1 +1,2 @@\n"
-            " Existing content\n"
-            f"+RepoPilot suggestion: {note}\n"
-        )
+        base = "Existing content\n"
+        return build_git_diff(target, base, f"{base}RepoPilot suggestion: {note}\n")
 
     def _extract_touched_paths(self, diff: str) -> list[str]:
         paths: list[str] = []
