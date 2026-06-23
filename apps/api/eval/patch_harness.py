@@ -9,9 +9,15 @@ dataset, then checks every drafted patch on two deterministic bars:
   (``PatchService.validate``).
 
 The static baseline produces one scaffold per static finding (the 3 pattern
-bugs), so it is fully deterministic and offline — committable as fact. Fix
-*correctness* is deliberately not measured here; this eval pins structural
-validity and scope, which is what the scaffold promises.
+bugs), so it is fully deterministic and offline — committable as fact (the
+baseline drafts no fixes, so ``fixes`` and ``verified`` are both 0).
+
+The deep arm adds a third bar, ``verified``: of the LLM fixes, how many actually
+removed the flagged defect. That is checked in a closed loop (re-run the static
+analyzer on the corrected chunk; see ``PatchWriterNode._verify_fix``) and is a
+necessary, not sufficient, correctness signal — it catches a "fix" that does not
+remove the flagged pattern. It only applies to statically-detectable findings;
+semantic-fix correctness is still out of scope.
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ class PatchMetrics:
     appliable: int    # of those, how many apply cleanly to their source
     in_scope: int     # of those, how many touch only their evidence path
     fixes: int        # of those, how many are deep LLM fix drafts (vs scaffolds)
+    verified: int     # of the fixes, how many removed the flagged static defect
     n: int            # cases evaluated
 
 
@@ -60,18 +67,20 @@ def evaluate_patches(
     llm = llm or FakeLLMProvider()
     cases = cases or CASES
     validator = PatchService()
-    patches = appliable = in_scope = fixes = 0
+    patches = appliable = in_scope = fixes = verified = 0
     for case in cases:
         source = {case.chunk["path"]: case.chunk["content"]}
         for patch in _patches_for(case, llm, deep):
             patches += 1
             if patch.kind == "fix":
                 fixes += 1
+                if patch.verified:
+                    verified += 1
             if patch_applies(patch.diff, source):
                 appliable += 1
             if validator.validate(patch.diff, [patch.path]).valid:
                 in_scope += 1
     return PatchMetrics(
         patches=patches, appliable=appliable, in_scope=in_scope, fixes=fixes,
-        n=len(cases),
+        verified=verified, n=len(cases),
     )

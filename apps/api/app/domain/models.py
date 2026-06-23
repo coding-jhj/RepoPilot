@@ -82,6 +82,11 @@ class Patch:
     diff: str
     finding_title: str
     kind: str = "scaffold"  # "scaffold" = review marker | "fix" = deep LLM-proposed change
+    # Only meaningful for kind == "fix": True iff the flagged static defect is no
+    # longer detectable after the change (signature removed). A necessary, not
+    # sufficient, correctness signal — semantic findings have no static checker and
+    # stay False. See PatchWriterNode._verify_fix.
+    verified: bool = False
 
 
 @dataclass(frozen=True)

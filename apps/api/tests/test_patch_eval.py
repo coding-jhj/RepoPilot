@@ -120,3 +120,38 @@ def test_deep_fix_falls_back_to_scaffold_on_noop():
 def test_static_baseline_drafts_no_fixes():
     # Offline baseline is scaffold-only; it must never fabricate a "fix".
     assert evaluate_patches().fixes == 0
+
+
+def test_static_baseline_verifies_nothing():
+    # No fixes -> nothing to verify; the closed-loop count must stay 0.
+    assert evaluate_patches().verified == 0
+
+
+def _bare_except_case():
+    return next(c for c in CASES if c.bug_kind == "bare_except")
+
+
+def test_deep_fix_is_verified_when_static_defect_removed():
+    # A real fix (bare `except:` -> `except Exception:`) makes the static rule stop
+    # firing, so the closed-loop check confirms the flagged defect is gone.
+    case = _bare_except_case()
+    real_fix = case.chunk["content"].replace("except:", "except Exception:")
+    patches = _deep_draft(case.chunk, real_fix)
+
+    assert len(patches) == 1
+    patch = patches[0]
+    assert patch.kind == "fix"
+    assert patch.verified is True
+
+
+def test_deep_fix_is_unverified_when_defect_remains():
+    # A "fix" that changes something but leaves the bare except in place must NOT be
+    # marked verified — this is the case the closed-loop check exists to catch.
+    case = _bare_except_case()
+    fake_fix = "# attempted fix\n" + case.chunk["content"]  # bare except still there
+    patches = _deep_draft(case.chunk, fake_fix)
+
+    assert len(patches) == 1
+    patch = patches[0]
+    assert patch.kind == "fix"  # diff is non-empty, so it is a fix draft...
+    assert patch.verified is False  # ...but unverified: the defect survived

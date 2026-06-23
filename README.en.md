@@ -24,7 +24,7 @@ For a detailed walkthrough of the project structure and code, see the rendered [
   - `eval()` usage
 - **deep analysis (optional)**: with a free Gemini key, add LLM-reasoned findings + summary on top of the retrieved evidence (default `gemini-3.5-flash`; static-only without a key)
 - generate patch drafts for selected evidence paths (review scaffold by default)
-- **deep patch (optional)**: with a Gemini key, draft an actual LLM-proposed fix diff per finding (appliable + in-scope checked, correctness not — a review draft)
+- **deep patch (optional)**: with a Gemini key, draft an actual LLM-proposed fix diff per finding (appliable + in-scope checked; for static-rule findings the fix is **verified in a closed loop** — re-run the analyzer and confirm the flagged defect is gone — a necessary, not sufficient, correctness check; semantic-fix correctness still unchecked)
 - validate patch scope
 - create real GitHub Pull Requests (opt-in token: branch -> commit -> open PR; mock without a token)
 - serve the static Next.js UI from FastAPI
@@ -131,8 +131,8 @@ python -m eval.bug_run
 # set REPOPILOT_GEMINI_API_KEY to add the deep (Gemini) arm — a sample run, not pinned
 
 python -m eval.patch_run
-# static baseline    patches=3 appliable=3/3 in_scope=3/3 fixes=0/3 (n=12)
-# set REPOPILOT_GEMINI_API_KEY to add the deep fix arm — diffs apply but are unverified (a sample, not pinned)
+# static baseline    patches=3 appliable=3/3 in_scope=3/3 fixes=0/3 verified=0/0 (n=12)
+# set REPOPILOT_GEMINI_API_KEY to add the deep fix arm — verified= counts fixes that removed the flagged defect (a sample, not pinned)
 
 python -m eval.test_scaffold_run
 # static baseline    skeletons=3 parseable=3/3 has_test_fn=3/3 refs_evidence=3/3 (n=12)
@@ -141,8 +141,11 @@ python -m eval.test_scaffold_run
 The patch eval checks that each review scaffold applies cleanly hunk-by-hunk to its
 source (real appliability, not just a `diff --git` header) and stays inside the
 approved path. With deep analysis on, the writer emits an actual LLM-proposed fix
-diff instead of a scaffold, held to the same bar (applies + in-scope) — but its
-correctness is not measured, so it is a review draft. The test-scaffold eval checks each drafted skeleton parses, exposes a
+diff instead of a scaffold, held to the same bar (applies + in-scope) plus a
+closed-loop **verified** check for static-rule findings: re-run the analyzer on the
+corrected chunk and confirm the flagged defect is gone. That is necessary, not
+sufficient — it catches a "fix" that does not remove the flagged pattern, but does
+not prove general correctness, and semantic fixes have no static checker. The test-scaffold eval checks each drafted skeleton parses, exposes a
 `test_*` function, and names its evidence — structural validity and scope, not fix or
 test correctness.
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from app.agents.nodes.bug_detector import MANUAL_REVIEW_TITLE
 from app.agents.state import AgentState
 from app.code.diff import build_git_diff
+from app.code.rules import StaticRuleAnalyzer
 from app.core.llm import LLMError, LLMProvider
 from app.domain.models import AgentStep, Finding, Patch
 
@@ -21,6 +22,16 @@ _FIX_SYSTEM = (
 
 def _comment_prefix(path: str) -> str:
     return "#" if Path(path).suffix in _HASH_SUFFIXES else "//"
+
+
+def _as_chunk(path: str, content: str) -> dict:
+    """Minimal chunk dict for re-running StaticRuleAnalyzer on arbitrary content."""
+    return {
+        "path": path,
+        "start_line": 1,
+        "end_line": content.count("\n") + 1,
+        "content": content,
+    }
 
 
 def _strip_fences(text: str) -> str:
@@ -44,13 +55,18 @@ class PatchWriterNode:
       so it applies cleanly. This is what the patch eval pins (valid + in-scope).
     - **deep fix (opt-in)** — when ``state.deep`` and the LLM is enabled, asks the
       model for a corrected version of the chunk and diffs original -> fix. The diff
-      is appliable by construction (difflib); *correctness* is not verified here, so
-      it is a draft for review, not a trusted fix. Falls back to the scaffold on any
-      LLM error or no-op result, so every finding still yields a patch.
+      is appliable by construction (difflib). For findings that came from a static
+      rule, the fix is then *verified* in a closed loop — re-run the static analyzer
+      on the corrected chunk and check the flagged defect signature is gone (see
+      ``_verify_fix``). This is a necessary, not sufficient, correctness check; a
+      semantic finding has no static checker, so its fix stays unverified. Falls back
+      to the scaffold on any LLM error or no-op result, so every finding still yields
+      a patch.
     """
 
     def __init__(self, llm: LLMProvider) -> None:
         self.llm = llm
+        self.static_rules = StaticRuleAnalyzer()
 
     def run(self, state: AgentState) -> AgentState:
         if "patch" not in state.task:
@@ -61,7 +77,7 @@ class PatchWriterNode:
 
         deep = bool(state.deep and getattr(self.llm, "enabled", False))
         chunks_by_path = {c["path"]: c for c in state.retrieved_chunks}
-        fixes = 0
+        fixes = verified = 0
         for finding in state.findings:
             if finding.title == MANUAL_REVIEW_TITLE or not finding.evidence:
                 continue
@@ -78,11 +94,14 @@ class PatchWriterNode:
                 state.patches.append(patch)
                 if patch.kind == "fix":
                     fixes += 1
+                    if patch.verified:
+                        verified += 1
 
         total = len(state.patches)
         if deep:
             summary = (
-                f"Drafted {total} patch(es): {fixes} deep fix draft(s) + "
+                f"Drafted {total} patch(es): {fixes} deep fix draft(s) "
+                f"({verified} verified - flagged defect gone after the fix) + "
                 f"{total - fixes} scaffold(s) for review."
             )
         else:
@@ -112,7 +131,28 @@ class PatchWriterNode:
                 AgentStep(node="patch_writer", summary=f"Deep patch unavailable: {exc}")
             )
             return None
-        diff = build_git_diff(path, content, _strip_fences(raw))
+        fixed = _strip_fences(raw)
+        diff = build_git_diff(path, content, fixed)
         if not diff:  # model returned the chunk unchanged -> nothing to apply
             return None
-        return Patch(path=path, diff=diff, finding_title=finding.title, kind="fix")
+        verified = self._verify_fix(path, content, fixed, finding.title)
+        return Patch(
+            path=path, diff=diff, finding_title=finding.title, kind="fix",
+            verified=verified,
+        )
+
+    def _verify_fix(
+        self, path: str, original: str, fixed: str, finding_title: str
+    ) -> bool:
+        """Closed-loop check: is the flagged static defect gone after the fix?
+
+        Re-runs the static analyzer on the original and the corrected chunk. True
+        iff this finding's defect was statically detectable before and is no longer
+        detectable after. Necessary, not sufficient — it confirms the flagged
+        signature is removed, not that the fix is otherwise correct. A finding with
+        no static signature (LLM-only/semantic) is never in the "before" set, so it
+        returns False rather than a false positive.
+        """
+        before = {f.title for f in self.static_rules.analyze_chunk(_as_chunk(path, original))}
+        after = {f.title for f in self.static_rules.analyze_chunk(_as_chunk(path, fixed))}
+        return finding_title in before and finding_title not in after
