@@ -55,6 +55,88 @@ def _files(diff: str) -> dict[str, list[str]]:
     return files
 
 
+def _reconstruct(body: list[str]) -> tuple[list[str], list[str]]:
+    """Rebuild (original_lines, new_lines) from a single file's diff body.
+
+    Context lines belong to both sides; ``-`` lines only to the original, ``+``
+    lines only to the new side. Lines are newline-stripped (the body came from
+    ``diff.splitlines()`` in :func:`_files`). This is the hunk region only — for
+    a small chunk diff that is the whole chunk plus difflib's context, which is
+    exactly what anchors a clean splice back into the full file.
+    """
+    original: list[str] = []
+    new: list[str] = []
+    for line in body:
+        if _HUNK.match(line) or line.startswith(("---", "+++")):
+            continue
+        tag, text = line[:1], line[1:]
+        if tag == " ":
+            original.append(text)
+            new.append(text)
+        elif tag == "-":
+            original.append(text)
+        elif tag == "+":
+            new.append(text)
+    return original, new
+
+
+def _find_block(haystack: list[str], needle: list[str]) -> int:
+    """First index where ``needle`` occurs contiguously in ``haystack``, or -1."""
+    if not needle:
+        return -1
+    last = len(haystack) - len(needle)
+    for start in range(last + 1):
+        if haystack[start : start + len(needle)] == needle:
+            return start
+    return -1
+
+
+def apply_patch_to_text(full_text: str, diff: str, path: str) -> str:
+    """Apply ``diff``'s change for ``path`` to ``full_text`` and return the result.
+
+    The diff may have been built against a *chunk* of the file (hunk offsets are
+    chunk-relative), so this does not trust line numbers. It rebuilds the hunk's
+    original region from the diff and locates that exact block of lines in the
+    full file, then splices in the new region. Raises ``ValueError`` if the diff
+    does not touch ``path`` or the original block is not found verbatim (the file
+    drifted from what the patch was built against) — never applies a fuzzy match.
+    """
+    body = _files(diff).get(path)
+    if body is None:
+        raise ValueError(f"Diff does not modify {path}.")
+    original, new = _reconstruct(body)
+    full_lines = _ensure_nl(full_text).splitlines()
+    idx = _find_block(full_lines, original)
+    if idx == -1:
+        raise ValueError(
+            f"Patch context not found in {path}; the file has drifted from the patch."
+        )
+    spliced = full_lines[:idx] + new + full_lines[idx + len(original) :]
+    return "\n".join(spliced) + "\n"
+
+
+def apply_unified_diff(diff: str, sources: dict[str, str]) -> dict[str, str]:
+    """Apply every file's hunks in ``diff`` to ``sources`` and return new contents.
+
+    ``sources`` must be the text the diff was built against (e.g. the chunk for a
+    chunk-relative diff). Round-trips with :func:`build_git_diff`:
+    ``apply_unified_diff(build_git_diff(p, a, b), {p: a}) == {p: _ensure_nl(b)}``.
+    Raises ``ValueError`` on a context/removed-line mismatch.
+    """
+    result: dict[str, str] = {}
+    for path, body in _files(diff).items():
+        if path not in sources:
+            raise ValueError(f"No source provided for {path}.")
+        original, new = _reconstruct(body)
+        src = _ensure_nl(sources[path]).splitlines()
+        idx = _find_block(src, original)
+        if idx == -1:
+            raise ValueError(f"Patch does not apply cleanly to {path}.")
+        spliced = src[:idx] + new + src[idx + len(original) :]
+        result[path] = "\n".join(spliced) + "\n"
+    return result
+
+
 def patch_applies(diff: str, sources: dict[str, str]) -> bool:
     """True iff every hunk's context/removed lines match ``sources`` exactly.
 

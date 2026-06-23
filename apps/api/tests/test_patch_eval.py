@@ -9,7 +9,12 @@ the eval would measure nothing.
 from app.agents.nodes.bug_detector import BugDetectorNode
 from app.agents.nodes.patch_writer import PatchWriterNode
 from app.agents.state import AgentState
-from app.code.diff import build_git_diff, patch_applies
+from app.code.diff import (
+    apply_patch_to_text,
+    apply_unified_diff,
+    build_git_diff,
+    patch_applies,
+)
 from app.core.llm import FakeLLMProvider
 from app.services.patch_service import PatchService
 from eval.bug_dataset import CASES
@@ -34,6 +39,46 @@ def test_patch_writer_drafts_appliable_scoped_scaffold():
     assert "RepoPilot: review" in patch.diff
     assert patch_applies(patch.diff, {patch.path: pattern_case.chunk["content"]})
     assert PatchService().validate(patch.diff, [patch.path]).valid
+
+
+def test_apply_unified_diff_round_trips_build_git_diff():
+    a = "def run(expr):\n    return eval(expr)"
+    b = "def run(expr):\n    return ast.literal_eval(expr)"
+    diff = build_git_diff("calc.py", a, b)
+    assert apply_unified_diff(diff, {"calc.py": a}) == {"calc.py": b + "\n"}
+
+
+def test_apply_patch_to_text_splices_chunk_diff_into_full_file():
+    # The diff is built against a chunk; applying it to the whole file must land
+    # on the right block by content match, not chunk-relative line numbers.
+    chunk = "    except:\n        return None"
+    fixed = "    except Exception as err:\n        log(err)\n        return None"
+    diff = build_git_diff("loader.py", chunk, fixed)
+
+    full = (
+        "import logging\n\n"
+        "def load(path):\n"
+        "    try:\n"
+        "        return read(path)\n"
+        "    except:\n"
+        "        return None\n"
+    )
+    out = apply_patch_to_text(full, diff, "loader.py")
+    assert "except Exception as err:" in out
+    assert "    except:\n" not in out
+    assert out.startswith("import logging\n\ndef load(path):")  # untouched lines kept
+
+
+def test_apply_patch_to_text_rejects_drifted_file():
+    chunk = "    return eval(expr)"
+    diff = build_git_diff("calc.py", chunk, "    return safe(expr)")
+    drifted = "def run(expr):\n    return compute(expr)\n"  # chunk no longer present
+    try:
+        apply_patch_to_text(drifted, diff, "calc.py")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError on drifted file")
 
 
 def test_patch_applies_rejects_corrupted_hunk():
