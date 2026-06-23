@@ -26,6 +26,12 @@ embeddings = [
   "sentence-transformers>=2.2.0",
 ]
 
+# Ship only the runtime app package. Without this, setuptools flat-layout
+# auto-discovery also finds eval/ and tests/ as top-level packages and refuses
+# to build ("multiple top-level packages discovered").
+[tool.setuptools.packages.find]
+include = ["app*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
