@@ -65,3 +65,58 @@ def test_draft_patch_output_is_valid_scoped_diff():
     service = PatchService()
     diff = service.draft_patch("tidy imports", ["app/main.py"])
     assert service.validate(diff, ["app/main.py"]).valid
+
+
+class _StubFixLLM:
+    """Enabled fake LLM returning a canned corrected chunk.
+
+    Lets the deep patch path be tested deterministically, without a live model:
+    the mechanism (LLM text -> appliable, in-scope fix diff) is what we pin, not
+    Gemini's output.
+    """
+
+    enabled = True
+
+    def __init__(self, fixed: str) -> None:
+        self.fixed = fixed
+
+    def complete(self, system: str, prompt: str) -> str:
+        return self.fixed
+
+
+def _deep_draft(chunk: dict, fixed: str):
+    llm = _StubFixLLM(fixed)
+    state = AgentState(
+        repo_id="t", task="patch_generation", retrieved_chunks=[chunk], deep=True
+    )
+    BugDetectorNode(llm).run(state)
+    PatchWriterNode(llm).run(state)
+    return state.patches
+
+
+def test_deep_fix_produces_appliable_in_scope_fix_patch():
+    pattern_case = next(c for c in CASES if c.group == "pattern")
+    content = pattern_case.chunk["content"]
+    patches = _deep_draft(pattern_case.chunk, "# fixed by deep analysis\n" + content)
+
+    assert len(patches) == 1
+    patch = patches[0]
+    assert patch.kind == "fix"
+    assert "RepoPilot: review" not in patch.diff  # a real fix, not the scaffold
+    assert patch_applies(patch.diff, {patch.path: content})
+    assert PatchService().validate(patch.diff, [patch.path]).valid
+
+
+def test_deep_fix_falls_back_to_scaffold_on_noop():
+    # Model echoes the chunk unchanged -> empty diff -> scaffold fallback, so the
+    # finding still yields a reviewable patch.
+    pattern_case = next(c for c in CASES if c.group == "pattern")
+    patches = _deep_draft(pattern_case.chunk, pattern_case.chunk["content"])
+
+    assert len(patches) == 1
+    assert patches[0].kind == "scaffold"
+
+
+def test_static_baseline_drafts_no_fixes():
+    # Offline baseline is scaffold-only; it must never fabricate a "fix".
+    assert evaluate_patches().fixes == 0
