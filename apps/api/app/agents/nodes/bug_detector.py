@@ -29,7 +29,7 @@ class BugDetectorNode:
         self.static_rules = StaticRuleAnalyzer()
 
     def run(self, state: AgentState) -> AgentState:
-        if "bug" not in state.task and "patch" not in state.task:
+        if all(kw not in state.task for kw in ("bug", "patch", "test")):
             state.timeline.append(
                 AgentStep(node="bug_detector", summary="Skipped bug scan for this task.")
             )

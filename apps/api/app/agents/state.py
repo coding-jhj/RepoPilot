@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.domain.models import AgentStep, Finding, Patch
+from app.domain.models import AgentStep, Finding, Patch, TestSkeleton
 
 
 @dataclass
@@ -15,3 +15,4 @@ class AgentState:
     summary: str = ""
     deep: bool = False
     patches: list[Patch] = field(default_factory=list)
+    test_skeletons: list[TestSkeleton] = field(default_factory=list)

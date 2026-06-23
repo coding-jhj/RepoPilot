@@ -84,6 +84,13 @@ class Patch:
 
 
 @dataclass(frozen=True)
+class TestSkeleton:
+    path: str
+    code: str
+    finding_title: str
+
+
+@dataclass(frozen=True)
 class PatchValidationReport:
     valid: bool
     touched_paths: list[str]
