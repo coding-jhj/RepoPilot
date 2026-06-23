@@ -81,6 +81,7 @@ class Patch:
     path: str
     diff: str
     finding_title: str
+    kind: str = "scaffold"  # "scaffold" = review marker | "fix" = deep LLM-proposed change
 
 
 @dataclass(frozen=True)
