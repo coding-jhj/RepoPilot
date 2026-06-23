@@ -4,7 +4,7 @@
 
 Live Demo: [https://jeonghwanju-repopilot.hf.space](https://jeonghwanju-repopilot.hf.space/)
 
-RepoPilot is a free web demo that imports a public GitHub repository, indexes source files, runs local analysis, and shows evidence-backed findings and patch drafts. It does not require OpenAI, Claude, paid inference APIs, hosted databases, or paid vector databases.
+RepoPilot is a free web demo that imports a public GitHub repository, indexes source files, runs local analysis, and shows evidence-backed findings and patch drafts. It does not require OpenAI, Claude, paid inference APIs, hosted databases, or paid vector databases. The default path is deterministic static analysis; turning on **deep analysis** with a free Gemini key (BYO-key) adds LLM reasoning on top of the same evidence.
 
 For a detailed walkthrough of the project structure and code, see the rendered [RepoPilot Code Guide](https://coding-jhj.github.io/RepoPilot/repopilot-code-guide.html).
 
@@ -14,26 +14,27 @@ For a detailed walkthrough of the project structure and code, see the rendered [
 - clone into a temporary workspace
 - index Python, JavaScript, TypeScript, and Markdown files
 - extract Python classes/functions/imports with AST
-- extract lightweight JS/TS symbols/imports
-- retrieve relevant code chunks locally
+- extract JS/TS/TSX symbols/imports with tree-sitter (regex fallback)
+- retrieve relevant code chunks locally (keyword by default, opt-in MiniLM embedding semantic search via `REPOPILOT_USE_EMBEDDINGS=true`)
 - show an agent timeline
 - show findings with file/line evidence
 - run free static-analysis rules
   - hardcoded secret candidates
   - bare `except:`
   - `eval()` usage
+- **deep analysis (optional)**: with a free Gemini key, add LLM-reasoned findings + summary on top of the retrieved evidence (default `gemini-3.5-flash`; static-only without a key)
 - generate patch drafts for selected evidence paths
 - validate patch scope
+- create real GitHub Pull Requests (opt-in token: branch -> commit -> open PR; mock without a token)
 - serve the static Next.js UI from FastAPI
 - deploy for free on Hugging Face Spaces CPU Basic
+- **two eval harnesses** (evals over vibes): retrieval (recall@k/MRR) and bug-finding (precision/recall/F1), pinning a deterministic baseline
 
 ## What Does Not Work Yet
 
-- deep LLM-based bug reasoning
-- real GitHub Pull Request creation
-- applying patches directly to the source repository
+- a server-side default LLM (deep analysis needs the user's own free Gemini key)
+- automatic unified-diff application (real PRs take explicit file contents)
 - full analysis of large repositories
-- tree-sitter precision parsing
 - persistent user history or storage
 
 This is not a Devin clone. It is a free-first MVP that shows how much of a practical software-engineering agent can be built without paid services.
@@ -58,10 +59,12 @@ GitHub URL
 | Backend | FastAPI, Pydantic |
 | Frontend | Next.js static export, React, TypeScript |
 | Deployment | Hugging Face Spaces Docker |
-| Code Analysis | Python AST, JS/TS regex scaffold |
-| Retrieval | In-memory chunk search |
+| Code Analysis | Python AST, JS/TS/TSX tree-sitter (regex fallback) |
+| Retrieval | In-memory chunk search (keyword + opt-in MiniLM embedding semantic search) |
 | Static Rules | hardcoded secret, bare except, eval detection |
-| LLM | Not required by default |
+| GitHub | real PR creation (opt-in token, httpx REST) |
+| LLM | Not required by default (deep analysis is BYO Gemini key) |
+| Eval | retrieval (recall@k/MRR) and bug-finding (precision/recall/F1) harnesses |
 | Tests | pytest, Next.js build |
 
 ## Local Run
@@ -104,11 +107,29 @@ npm run build
 
 Current verification:
 
-- backend tests: `17 passed`
+- backend tests: `33 passed, 2 skipped`
+- tree-sitter JS/TS parsing + real PR flow regression tests included
+- eval harness unit tests (dataset split assertion, deterministic baseline) included
 - Next.js static export build passed
 - Hugging Face Space `/health` responded successfully
 - Hugging Face Space web page returned HTTP `200`
 
+## Evaluation
+
+"Evals over vibes" — core features are checked with numbers, not feelings. Only the
+deterministic offline baseline is pinned as fact; live-LLM results are not reproducible,
+so they are reported as opt-in sample runs.
+
+```bash
+cd apps/api
+REPOPILOT_USE_EMBEDDINGS=true python -m eval.retrieval_run
+# keyword-only recall@3=0.50 / semantic recall@3=1.00
+
+python -m eval.bug_run
+# static baseline  precision=1.00 recall=0.38 f1=0.55  (tp=3 fp=0 fn=5, n=12)
+# set REPOPILOT_GEMINI_API_KEY to add the deep (Gemini) arm — a sample run, not pinned
+```
+
 ## Limitations
 
-The free deployment has CPU, disk, network, and runtime limits. RepoPilot is optimized for small public repositories. Current findings are deterministic static-rule results, not LLM reasoning.
+The free deployment has CPU, disk, network, and runtime limits. RepoPilot is optimized for small public repositories. Default findings are deterministic static-rule results; enabling deep analysis (BYO Gemini key) adds LLM-reasoned findings on top of the same evidence.

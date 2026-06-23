@@ -24,7 +24,7 @@ RepoPilot은 OpenAI·Claude·유료 DB·유료 vector DB 없이 동작합니다.
 - Python, JavaScript, TypeScript, Markdown 파일 인덱싱
 - Python AST 기반 class/function/import 추출
 - JS/TS/TSX tree-sitter 기반 정밀 파싱 (class, method, interface, type, enum, arrow-function, import)
-- local retrieval 기반 관련 코드 chunk 검색
+- local retrieval 기반 관련 코드 chunk 검색 (기본 키워드, opt-in MiniLM 임베딩 의미 검색 `REPOPILOT_USE_EMBEDDINGS=true`)
 - agent timeline 표시
 - 파일/라인 근거가 포함된 finding 표시
 - 무료 정적 분석 rule 실행
@@ -37,6 +37,7 @@ RepoPilot은 OpenAI·Claude·유료 DB·유료 vector DB 없이 동작합니다.
 - 실제 GitHub Pull Request 생성 (opt-in: 토큰 제공 시 브랜치 생성 → 파일 커밋 → PR 오픈, 토큰 없으면 mock)
 - FastAPI가 Next.js static export를 함께 서빙
 - Hugging Face Spaces CPU Basic 무료 배포
+- **eval 하네스 2종** (evals over vibes): retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) — 결정적 베이스라인을 숫자로 고정
 
 ## 아직 안 되는 것
 
@@ -102,10 +103,11 @@ Planner
 | Frontend | Next.js static export, React, TypeScript |
 | Deployment | Hugging Face Spaces Docker |
 | Code Analysis | Python AST, JS/TS/TSX tree-sitter (regex fallback) |
-| Retrieval | In-memory chunk search |
+| Retrieval | In-memory chunk search (키워드 + opt-in MiniLM 임베딩 의미 검색) |
 | Static Rules | hardcoded secret, bare except, eval 탐지 |
 | GitHub | 실제 PR 생성 (opt-in 토큰, httpx REST) |
-| LLM | 기본 사용 안 함 |
+| LLM | 기본 사용 안 함 (deep analysis는 BYO Gemini 키) |
+| Eval | retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) 하네스 |
 | Tests | pytest, Next.js build |
 
 ## 무료 배포 구조
@@ -179,11 +181,37 @@ npm run build
 
 현재 검증 상태:
 
-- backend tests: `23 passed` (Python 3.13)
+- backend tests: `33 passed, 2 skipped`
 - tree-sitter JS/TS 파싱 + 실제 PR 흐름 회귀 테스트 포함
+- eval 하네스 단위 테스트(데이터셋 split assertion·결정적 베이스라인) 포함
 - Next.js static export build 통과
 - Hugging Face Space `/health` 응답 확인
 - Hugging Face Space 웹 페이지 HTTP `200` 확인
+
+## 품질 측정 (eval)
+
+"evals over vibes" — 핵심 기능을 느낌이 아니라 숫자로 검증합니다. 결정적(offline) 베이스라인만
+사실로 고정하고, 라이브 LLM 결과는 재현 불가하므로 opt-in 샘플로만 표기합니다.
+
+retrieval (키워드 vs 의미 검색, lexical-gap 벤치):
+
+```bash
+cd apps/api
+REPOPILOT_USE_EMBEDDINGS=true python -m eval.retrieval_run
+# keyword-only  recall@3=0.50 / semantic  recall@3=1.00
+```
+
+bug-finding (static rule 베이스라인, 12케이스 라벨 데이터셋):
+
+```bash
+cd apps/api
+python -m eval.bug_run
+# static baseline  precision=1.00 recall=0.38 f1=0.55  (tp=3 fp=0 fn=5, n=12)
+# REPOPILOT_GEMINI_API_KEY 설정 시 deep(Gemini) arm 추가 — 샘플 런(재현 불가, 고정 안 함)
+```
+
+데이터셋은 static이 잡는 `pattern` 버그와 못 잡는 `semantic` 버그를 분리해, deep analysis가
+메워야 할 recall gap을 드러냅니다.
 
 ## 주요 파일
 
@@ -199,6 +227,7 @@ apps/api/app/services/patch_service.py   # patch draft + scope validation
 apps/api/app/services/github_service.py  # PR entry (mock vs real, 토큰 분기)
 apps/api/app/services/github_pr_service.py # 실제 GitHub REST PR 흐름
 apps/web/app/page.tsx                    # main demo UI
+apps/api/eval/                           # retrieval · bug-finding eval 하네스 + 라벨 데이터셋
 Dockerfile                               # Hugging Face Spaces deployment image
 ```
 
@@ -206,11 +235,10 @@ Dockerfile                               # Hugging Face Spaces deployment image
 
 - 정적 분석 rule set 확장
 - dependency graph 기반 위험 탐지
-- patch template 품질 개선
-- 작은 demo repo benchmark 추가
+- PatchWriter 노드 실체화 + patch 품질 eval (scope·유효 diff 측정)
 - unified diff 자동 적용으로 PR 파일 생성 자동화
 - 프론트엔드에서 PR 토큰 입력 UI 연결
 
 ## 한계
 
-무료 배포 환경에서는 CPU, 디스크, 네트워크, 실행 시간 제한이 있습니다. 그래서 RepoPilot은 작은 public repo를 대상으로 한 데모에 최적화되어 있습니다. 현재 finding은 LLM 추론이 아니라 deterministic static rule 기반입니다.
+무료 배포 환경에서는 CPU, 디스크, 네트워크, 실행 시간 제한이 있습니다. 그래서 RepoPilot은 작은 public repo를 대상으로 한 데모에 최적화되어 있습니다. 기본 finding은 deterministic static rule 기반이고, deep analysis를 켜면(BYO Gemini 키) 같은 evidence 위에서 LLM 추론 finding이 더해집니다.
