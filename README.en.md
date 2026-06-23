@@ -28,7 +28,7 @@ For a detailed walkthrough of the project structure and code, see the rendered [
 - create real GitHub Pull Requests (opt-in token: branch -> commit -> open PR; mock without a token)
 - serve the static Next.js UI from FastAPI
 - deploy for free on Hugging Face Spaces CPU Basic
-- **three eval harnesses** (evals over vibes): retrieval (recall@k/MRR), bug-finding (precision/recall/F1), and patch (appliability/scope), pinning a deterministic baseline
+- **four eval harnesses** (evals over vibes): retrieval (recall@k/MRR), bug-finding (precision/recall/F1), patch (appliability/scope), and test-scaffold (structural validity), pinning a deterministic baseline
 
 ## What Does Not Work Yet
 
@@ -64,7 +64,7 @@ GitHub URL
 | Static Rules | hardcoded secret, bare except, eval detection |
 | GitHub | real PR creation (opt-in token, httpx REST) |
 | LLM | Not required by default (deep analysis is BYO Gemini key) |
-| Eval | retrieval (recall@k/MRR), bug-finding (precision/recall/F1), patch (appliability/scope) harnesses |
+| Eval | retrieval (recall@k/MRR), bug-finding (precision/recall/F1), patch (appliability/scope), test-scaffold (structural validity) harnesses |
 | Tests | pytest, Next.js build |
 
 ## Local Run
@@ -131,11 +131,16 @@ python -m eval.bug_run
 
 python -m eval.patch_run
 # static baseline    patches=3 appliable=3/3 in_scope=3/3 (n=12)
+
+python -m eval.test_scaffold_run
+# static baseline    skeletons=3 parseable=3/3 has_test_fn=3/3 refs_evidence=3/3 (n=12)
 ```
 
 The patch eval checks that each review scaffold applies cleanly hunk-by-hunk to its
 source (real appliability, not just a `diff --git` header) and stays inside the
-approved path — validity and scope, not fix correctness.
+approved path. The test-scaffold eval checks each drafted skeleton parses, exposes a
+`test_*` function, and names its evidence — structural validity and scope, not fix or
+test correctness.
 
 ## Limitations
 

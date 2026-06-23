@@ -37,7 +37,7 @@ RepoPilot은 OpenAI·Claude·유료 DB·유료 vector DB 없이 동작합니다.
 - 실제 GitHub Pull Request 생성 (opt-in: 토큰 제공 시 브랜치 생성 → 파일 커밋 → PR 오픈, 토큰 없으면 mock)
 - FastAPI가 Next.js static export를 함께 서빙
 - Hugging Face Spaces CPU Basic 무료 배포
-- **eval 하네스 3종** (evals over vibes): retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) · patch(appliability/scope) — 결정적 베이스라인을 숫자로 고정
+- **eval 하네스 4종** (evals over vibes): retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) · patch(appliability/scope) · test-scaffold(구조적 validity) — 결정적 베이스라인을 숫자로 고정
 
 ## 아직 안 되는 것
 
@@ -107,7 +107,7 @@ Planner
 | Static Rules | hardcoded secret, bare except, eval 탐지 |
 | GitHub | 실제 PR 생성 (opt-in 토큰, httpx REST) |
 | LLM | 기본 사용 안 함 (deep analysis는 BYO Gemini 키) |
-| Eval | retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) · patch(appliability/scope) 하네스 |
+| Eval | retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) · patch(appliability/scope) · test-scaffold(구조 validity) 하네스 |
 | Tests | pytest, Next.js build |
 
 ## 무료 배포 구조
@@ -216,6 +216,14 @@ patch (drafted 패치가 실제 적용 가능 + scope 안인지):
 cd apps/api
 python -m eval.patch_run
 # static baseline    patches=3 appliable=3/3 in_scope=3/3 (n=12)
+```
+
+test-scaffold (생성 테스트 skeleton이 구조적으로 유효한지):
+
+```bash
+cd apps/api
+python -m eval.test_scaffold_run
+# static baseline    skeletons=3 parseable=3/3 has_test_fn=3/3 refs_evidence=3/3 (n=12)
 ```
 
 데이터셋은 static이 잡는 `pattern` 버그와 못 잡는 `semantic` 버그를 분리해, deep analysis가
