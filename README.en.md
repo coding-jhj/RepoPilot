@@ -23,7 +23,8 @@ For a detailed walkthrough of the project structure and code, see the rendered [
   - bare `except:`
   - `eval()` usage
 - **deep analysis (optional)**: with a free Gemini key, add LLM-reasoned findings + summary on top of the retrieved evidence (default `gemini-3.5-flash`; static-only without a key)
-- generate patch drafts for selected evidence paths
+- generate patch drafts for selected evidence paths (review scaffold by default)
+- **deep patch (optional)**: with a Gemini key, draft an actual LLM-proposed fix diff per finding (appliable + in-scope checked, correctness not — a review draft)
 - validate patch scope
 - create real GitHub Pull Requests (opt-in token: branch -> commit -> open PR; mock without a token)
 - serve the static Next.js UI from FastAPI
@@ -130,7 +131,8 @@ python -m eval.bug_run
 # set REPOPILOT_GEMINI_API_KEY to add the deep (Gemini) arm — a sample run, not pinned
 
 python -m eval.patch_run
-# static baseline    patches=3 appliable=3/3 in_scope=3/3 (n=12)
+# static baseline    patches=3 appliable=3/3 in_scope=3/3 fixes=0/3 (n=12)
+# set REPOPILOT_GEMINI_API_KEY to add the deep fix arm — diffs apply but are unverified (a sample, not pinned)
 
 python -m eval.test_scaffold_run
 # static baseline    skeletons=3 parseable=3/3 has_test_fn=3/3 refs_evidence=3/3 (n=12)
@@ -138,7 +140,9 @@ python -m eval.test_scaffold_run
 
 The patch eval checks that each review scaffold applies cleanly hunk-by-hunk to its
 source (real appliability, not just a `diff --git` header) and stays inside the
-approved path. The test-scaffold eval checks each drafted skeleton parses, exposes a
+approved path. With deep analysis on, the writer emits an actual LLM-proposed fix
+diff instead of a scaffold, held to the same bar (applies + in-scope) — but its
+correctness is not measured, so it is a review draft. The test-scaffold eval checks each drafted skeleton parses, exposes a
 `test_*` function, and names its evidence — structural validity and scope, not fix or
 test correctness.
 

@@ -32,7 +32,8 @@ RepoPilot은 OpenAI·Claude·유료 DB·유료 vector DB 없이 동작합니다.
   - bare `except:`
   - `eval()` 사용
 - **deep analysis (선택)**: 무료 Gemini 키를 넣으면 retrieved evidence 위에서 LLM 추론으로 추가 finding + 요약 생성 (기본값 `gemini-3.5-flash`, 키 없으면 정적 분석만)
-- 선택한 evidence path 기준 patch draft 생성
+- 선택한 evidence path 기준 patch draft 생성 (기본은 review scaffold)
+- **deep 패치 (선택)**: Gemini 키를 넣으면 finding마다 LLM이 제안한 실제 fix diff 초안 생성 (적용 가능·scope 검증, 정확성 미검증 → 리뷰용)
 - patch가 승인된 파일 범위 안에 있는지 검증
 - 실제 GitHub Pull Request 생성 (opt-in: 토큰 제공 시 브랜치 생성 → 파일 커밋 → PR 오픈, 토큰 없으면 mock)
 - FastAPI가 Next.js static export를 함께 서빙
@@ -215,7 +216,8 @@ patch (drafted 패치가 실제 적용 가능 + scope 안인지):
 ```bash
 cd apps/api
 python -m eval.patch_run
-# static baseline    patches=3 appliable=3/3 in_scope=3/3 (n=12)
+# static baseline    patches=3 appliable=3/3 in_scope=3/3 fixes=0/3 (n=12)
+# REPOPILOT_GEMINI_API_KEY 설정 시 deep fix arm 추가 — diff는 적용 가능하나 정확성 미검증(샘플, 고정 안 함)
 ```
 
 test-scaffold (생성 테스트 skeleton이 구조적으로 유효한지):
@@ -229,7 +231,8 @@ python -m eval.test_scaffold_run
 데이터셋은 static이 잡는 `pattern` 버그와 못 잡는 `semantic` 버그를 분리해, deep analysis가
 메워야 할 recall gap을 드러냅니다. patch eval은 finding마다 만든 review scaffold가 hunk 단위로
 원본에 깨끗이 적용되는지(`diff --git` 헤더만 보는 게 아니라 실제 appliability) + 승인 path 밖을
-건드리지 않는지를 검증합니다.
+건드리지 않는지를 검증합니다. deep analysis를 켜면 scaffold 대신 LLM이 제안한 실제 fix diff를 내며,
+이 역시 같은 바(적용 가능·scope 안)로 검증합니다 — 단 정확성은 측정하지 않는 리뷰용 초안입니다.
 
 ## 주요 파일
 
@@ -253,7 +256,7 @@ Dockerfile                               # Hugging Face Spaces deployment image
 
 - 정적 분석 rule set 확장
 - dependency graph 기반 위험 탐지
-- deep(LLM) 패치 생성: review scaffold를 넘어 실제 fix diff 제안 (opt-in, 검증 후 채택)
+- deep fix 정확성 자동 검증: 생성한 test로 fix diff를 적용·통과시켜 자동 채택 (현재 deep fix는 리뷰용 초안까지)
 - unified diff 자동 적용으로 PR 파일 생성 자동화
 - 프론트엔드에서 PR 토큰 입력 UI 연결
 
