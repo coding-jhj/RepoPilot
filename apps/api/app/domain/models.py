@@ -74,6 +74,7 @@ class AgentResult:
     summary: str
     findings: list[Finding]
     timeline: list[AgentStep]
+    patches: list["Patch"] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,9 @@
 import httpx
+import pytest
 
+from app.code.diff import apply_patch_to_text, build_git_diff
 from app.services.github_service import GitHubService
+from app.services.repo_service import RepoService
 
 
 def _mock_github(calls: list[tuple[str, str]]):
@@ -78,3 +81,56 @@ def test_error_when_token_but_missing_repo_or_files():
     )
     assert result["status"] == "error"
     assert "owner" in result["message"]
+
+
+def test_read_file_reads_workspace_and_blocks_escape(tmp_path):
+    svc = RepoService(tmp_path)
+    workspace = svc.workspace_for("repo_test")
+    workspace.mkdir(parents=True)
+    (workspace / "a.py").write_text("x = 1\n", encoding="utf-8")
+
+    assert svc.read_file("repo_test", "a.py") == "x = 1\n"
+    with pytest.raises(ValueError):
+        svc.read_file("repo_test", "../../../etc/passwd")  # escape refused
+    with pytest.raises(FileNotFoundError):
+        svc.read_file("repo_test", "missing.py")
+
+
+def test_pr_from_patch_composition_opens_real_pr(tmp_path):
+    # What the /github/pr-from-patch route does: read the workspace file, apply the
+    # chunk-relative diff to get full content, then open a real PR with that file.
+    svc = RepoService(tmp_path)
+    workspace = svc.workspace_for("repo_test")
+    workspace.mkdir(parents=True)
+    full = (
+        "def load(path):\n    try:\n        return read(path)\n"
+        "    except:\n        return None\n"
+    )
+    (workspace / "loader.py").write_text(full, encoding="utf-8")
+
+    chunk = "    except:\n        return None"
+    fixed = "    except Exception as err:\n        log(err)\n        return None"
+    diff = build_git_diff("loader.py", chunk, fixed)
+
+    original = svc.read_file("repo_test", "loader.py")
+    new_content = apply_patch_to_text(original, diff, "loader.py")
+    assert "except Exception as err:" in new_content
+    assert "    except:\n" not in new_content
+
+    calls: list[tuple[str, str]] = []
+    result = GitHubService().create_pull_request(
+        repo_id="repo_test",
+        title="Fix bare except",
+        body="by RepoPilot",
+        diff=diff,
+        confirmed=True,
+        token="ghp_fake",
+        owner="acme",
+        repo="widget",
+        base="main",
+        head="repopilot/fix",
+        files=[{"path": "loader.py", "content": new_content}],
+        client=_mock_github(calls),
+    )
+    assert result["status"] == "created"
+    assert ("PUT", "/repos/acme/widget/contents/loader.py") in calls

@@ -45,6 +45,20 @@ class RepoService:
             raise ValueError("Workspace path escaped root.")
         return workspace
 
+    def read_file(self, repo_id: str, rel_path: str) -> str:
+        """Read a file from a cloned workspace, refusing paths that escape it.
+
+        Used to turn a chunk-relative patch into a real full-file change for a PR:
+        the diff alone is not enough, the Contents API needs the whole file.
+        """
+        workspace = self.workspace_for(repo_id)
+        target = (workspace / rel_path).resolve()
+        if not target.is_relative_to(workspace):
+            raise ValueError("File path escaped workspace.")
+        if not target.is_file():
+            raise FileNotFoundError(rel_path)
+        return target.read_text(encoding="utf-8")
+
     def clone_public_repo(self, url: str, branch: str = "main") -> tuple[str, ParsedRepoUrl]:
         parsed = self.validate_github_url(url)
         repo_id = self.repo_id_for(parsed.clone_url, branch)

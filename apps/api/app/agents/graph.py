@@ -39,4 +39,5 @@ class RepoPilotAgent:
             summary=state.summary,
             findings=state.findings,
             timeline=state.timeline,
+            patches=state.patches,
         )

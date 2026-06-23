@@ -51,11 +51,20 @@ class AgentStepResponse(BaseModel):
     summary: str
 
 
+class PatchDraft(BaseModel):
+    path: str
+    diff: str
+    finding_title: str
+    kind: str  # "scaffold" (review marker) | "fix" (LLM-proposed change)
+    verified: bool  # fix only: flagged static defect gone after the change
+
+
 class AnalysisResponse(BaseModel):
     status: str
     summary: str
     findings: list[FindingResponse]
     timeline: list[AgentStepResponse]
+    patches: list[PatchDraft] = []
 
 
 class ChatRequest(BaseModel):
@@ -100,6 +109,24 @@ class PullRequestRequest(BaseModel):
     base: str = "main"
     head: str | None = None
     files: list[PullRequestFile] | None = None
+
+
+class PullRequestFromPatchRequest(BaseModel):
+    """Open a PR from a single patch. The server reads the file from the cloned
+    workspace and applies the (chunk-relative) diff to produce the full new
+    content the Contents API needs — the browser never has the whole file."""
+
+    repo_id: str
+    path: str = Field(min_length=1)
+    diff: str
+    title: str
+    body: str = ""
+    confirmed: bool = False
+    token: str | None = None
+    owner: str | None = None
+    repo: str | None = None
+    base: str = "main"
+    head: str | None = None
 
 
 class PullRequestResponse(BaseModel):
