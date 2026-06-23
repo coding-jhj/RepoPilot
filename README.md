@@ -37,7 +37,7 @@ RepoPilot은 OpenAI·Claude·유료 DB·유료 vector DB 없이 동작합니다.
 - 실제 GitHub Pull Request 생성 (opt-in: 토큰 제공 시 브랜치 생성 → 파일 커밋 → PR 오픈, 토큰 없으면 mock)
 - FastAPI가 Next.js static export를 함께 서빙
 - Hugging Face Spaces CPU Basic 무료 배포
-- **eval 하네스 2종** (evals over vibes): retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) — 결정적 베이스라인을 숫자로 고정
+- **eval 하네스 3종** (evals over vibes): retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) · patch(appliability/scope) — 결정적 베이스라인을 숫자로 고정
 
 ## 아직 안 되는 것
 
@@ -107,7 +107,7 @@ Planner
 | Static Rules | hardcoded secret, bare except, eval 탐지 |
 | GitHub | 실제 PR 생성 (opt-in 토큰, httpx REST) |
 | LLM | 기본 사용 안 함 (deep analysis는 BYO Gemini 키) |
-| Eval | retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) 하네스 |
+| Eval | retrieval(recall@k/MRR) · bug-finding(precision/recall/F1) · patch(appliability/scope) 하네스 |
 | Tests | pytest, Next.js build |
 
 ## 무료 배포 구조
@@ -210,8 +210,18 @@ python -m eval.bug_run
 # REPOPILOT_GEMINI_API_KEY 설정 시 deep(Gemini) arm 추가 — 샘플 런(재현 불가, 고정 안 함)
 ```
 
+patch (drafted 패치가 실제 적용 가능 + scope 안인지):
+
+```bash
+cd apps/api
+python -m eval.patch_run
+# static baseline    patches=3 appliable=3/3 in_scope=3/3 (n=12)
+```
+
 데이터셋은 static이 잡는 `pattern` 버그와 못 잡는 `semantic` 버그를 분리해, deep analysis가
-메워야 할 recall gap을 드러냅니다.
+메워야 할 recall gap을 드러냅니다. patch eval은 finding마다 만든 review scaffold가 hunk 단위로
+원본에 깨끗이 적용되는지(`diff --git` 헤더만 보는 게 아니라 실제 appliability) + 승인 path 밖을
+건드리지 않는지를 검증합니다.
 
 ## 주요 파일
 
@@ -235,7 +245,7 @@ Dockerfile                               # Hugging Face Spaces deployment image
 
 - 정적 분석 rule set 확장
 - dependency graph 기반 위험 탐지
-- PatchWriter 노드 실체화 + patch 품질 eval (scope·유효 diff 측정)
+- deep(LLM) 패치 생성: review scaffold를 넘어 실제 fix diff 제안 (opt-in, 검증 후 채택)
 - unified diff 자동 적용으로 PR 파일 생성 자동화
 - 프론트엔드에서 PR 토큰 입력 UI 연결
 

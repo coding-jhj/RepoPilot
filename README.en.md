@@ -28,7 +28,7 @@ For a detailed walkthrough of the project structure and code, see the rendered [
 - create real GitHub Pull Requests (opt-in token: branch -> commit -> open PR; mock without a token)
 - serve the static Next.js UI from FastAPI
 - deploy for free on Hugging Face Spaces CPU Basic
-- **two eval harnesses** (evals over vibes): retrieval (recall@k/MRR) and bug-finding (precision/recall/F1), pinning a deterministic baseline
+- **three eval harnesses** (evals over vibes): retrieval (recall@k/MRR), bug-finding (precision/recall/F1), and patch (appliability/scope), pinning a deterministic baseline
 
 ## What Does Not Work Yet
 
@@ -64,7 +64,7 @@ GitHub URL
 | Static Rules | hardcoded secret, bare except, eval detection |
 | GitHub | real PR creation (opt-in token, httpx REST) |
 | LLM | Not required by default (deep analysis is BYO Gemini key) |
-| Eval | retrieval (recall@k/MRR) and bug-finding (precision/recall/F1) harnesses |
+| Eval | retrieval (recall@k/MRR), bug-finding (precision/recall/F1), patch (appliability/scope) harnesses |
 | Tests | pytest, Next.js build |
 
 ## Local Run
@@ -128,7 +128,14 @@ REPOPILOT_USE_EMBEDDINGS=true python -m eval.retrieval_run
 python -m eval.bug_run
 # static baseline  precision=1.00 recall=0.38 f1=0.55  (tp=3 fp=0 fn=5, n=12)
 # set REPOPILOT_GEMINI_API_KEY to add the deep (Gemini) arm — a sample run, not pinned
+
+python -m eval.patch_run
+# static baseline    patches=3 appliable=3/3 in_scope=3/3 (n=12)
 ```
+
+The patch eval checks that each review scaffold applies cleanly hunk-by-hunk to its
+source (real appliability, not just a `diff --git` header) and stays inside the
+approved path — validity and scope, not fix correctness.
 
 ## Limitations
 
